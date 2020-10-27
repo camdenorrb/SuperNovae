@@ -85,4 +85,3 @@ enum Check @0xd1e179ce4037146c {
     lesserThanOrEqual @3;
     greaterThanOrEqual @4;
 }
-
