@@ -4,6 +4,462 @@
 package dev.twelveoclock.supernovae.proto;
 
 public final class CapnProto {
+  public static class Message {
+    public static final org.capnproto.StructSize STRUCT_SIZE = new org.capnproto.StructSize((short)1,(short)1);
+    public static final class Factory extends org.capnproto.StructFactory<Builder, Reader> {
+      public Factory() {
+      }
+      public final Reader constructReader(org.capnproto.SegmentReader segment, int data,int pointers, int dataSize, short pointerCount, int nestingLimit) {
+        return new Reader(segment,data,pointers,dataSize,pointerCount,nestingLimit);
+      }
+      public final Builder constructBuilder(org.capnproto.SegmentBuilder segment, int data,int pointers, int dataSize, short pointerCount) {
+        return new Builder(segment, data, pointers, dataSize, pointerCount);
+      }
+      public final org.capnproto.StructSize structSize() {
+        return Message.STRUCT_SIZE;
+      }
+      public final Reader asReader(Builder builder) {
+        return builder.asReader();
+      }
+    }
+    public static final Factory factory = new Factory();
+    public static final org.capnproto.StructList.Factory<Builder,Reader> listFactory =
+      new org.capnproto.StructList.Factory<Builder, Reader>(factory);
+    public static final class Builder extends org.capnproto.StructBuilder {
+      Builder(org.capnproto.SegmentBuilder segment, int data, int pointers,int dataSize, short pointerCount){
+        super(segment, data, pointers, dataSize, pointerCount);
+      }
+      public Which which() {
+        switch(_getShortField(0)) {
+          case 0 : return Which.CREATE_D_B;
+          case 1 : return Which.CREATE_TABLE;
+          case 2 : return Which.SELECT_D_B;
+          case 3 : return Which.SELECT;
+          case 4 : return Which.SELECT_FIRST;
+          case 5 : return Which.SELECT_EXACT;
+          case 6 : return Which.SELECT_N;
+          case 7 : return Which.INSERT;
+          case 8 : return Which.UPDATE;
+          case 9 : return Which.SELECT_RESPONSE;
+          case 10 : return Which.LOAD_TABLE;
+          case 11 : return Which.UNLOAD_ROWS;
+          case 12 : return Which.UNLOAD_TABLE;
+          default: return Which._NOT_IN_SCHEMA;
+        }
+      }
+      public final Reader asReader() {
+        return new Reader(segment, data, pointers, dataSize, pointerCount, 0x7fffffff);
+      }
+      public final boolean isCreateDB() {
+        return which() == Message.Which.CREATE_D_B;
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.CreateDB.Builder getCreateDB() {
+        assert which() == Message.Which.CREATE_D_B:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.CreateDB.factory, 0, null, 0);
+      }
+      public final void setCreateDB(dev.twelveoclock.supernovae.proto.CapnProto.CreateDB.Reader value) {
+        _setShortField(0, (short)Message.Which.CREATE_D_B.ordinal());
+        _setPointerField(dev.twelveoclock.supernovae.proto.CapnProto.CreateDB.factory,0, value);
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.CreateDB.Builder initCreateDB() {
+        _setShortField(0, (short)Message.Which.CREATE_D_B.ordinal());
+        return _initPointerField(dev.twelveoclock.supernovae.proto.CapnProto.CreateDB.factory,0, 0);
+      }
+      public final boolean isCreateTable() {
+        return which() == Message.Which.CREATE_TABLE;
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.CreateTable.Builder getCreateTable() {
+        assert which() == Message.Which.CREATE_TABLE:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.CreateTable.factory, 0, null, 0);
+      }
+      public final void setCreateTable(dev.twelveoclock.supernovae.proto.CapnProto.CreateTable.Reader value) {
+        _setShortField(0, (short)Message.Which.CREATE_TABLE.ordinal());
+        _setPointerField(dev.twelveoclock.supernovae.proto.CapnProto.CreateTable.factory,0, value);
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.CreateTable.Builder initCreateTable() {
+        _setShortField(0, (short)Message.Which.CREATE_TABLE.ordinal());
+        return _initPointerField(dev.twelveoclock.supernovae.proto.CapnProto.CreateTable.factory,0, 0);
+      }
+      public final boolean isSelectDB() {
+        return which() == Message.Which.SELECT_D_B;
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.SelectDB.Builder getSelectDB() {
+        assert which() == Message.Which.SELECT_D_B:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectDB.factory, 0, null, 0);
+      }
+      public final void setSelectDB(dev.twelveoclock.supernovae.proto.CapnProto.SelectDB.Reader value) {
+        _setShortField(0, (short)Message.Which.SELECT_D_B.ordinal());
+        _setPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectDB.factory,0, value);
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.SelectDB.Builder initSelectDB() {
+        _setShortField(0, (short)Message.Which.SELECT_D_B.ordinal());
+        return _initPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectDB.factory,0, 0);
+      }
+      public final boolean isSelect() {
+        return which() == Message.Which.SELECT;
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.Select.Builder getSelect() {
+        assert which() == Message.Which.SELECT:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.Select.factory, 0, null, 0);
+      }
+      public final void setSelect(dev.twelveoclock.supernovae.proto.CapnProto.Select.Reader value) {
+        _setShortField(0, (short)Message.Which.SELECT.ordinal());
+        _setPointerField(dev.twelveoclock.supernovae.proto.CapnProto.Select.factory,0, value);
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.Select.Builder initSelect() {
+        _setShortField(0, (short)Message.Which.SELECT.ordinal());
+        return _initPointerField(dev.twelveoclock.supernovae.proto.CapnProto.Select.factory,0, 0);
+      }
+      public final boolean isSelectFirst() {
+        return which() == Message.Which.SELECT_FIRST;
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.SelectFirst.Builder getSelectFirst() {
+        assert which() == Message.Which.SELECT_FIRST:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectFirst.factory, 0, null, 0);
+      }
+      public final void setSelectFirst(dev.twelveoclock.supernovae.proto.CapnProto.SelectFirst.Reader value) {
+        _setShortField(0, (short)Message.Which.SELECT_FIRST.ordinal());
+        _setPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectFirst.factory,0, value);
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.SelectFirst.Builder initSelectFirst() {
+        _setShortField(0, (short)Message.Which.SELECT_FIRST.ordinal());
+        return _initPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectFirst.factory,0, 0);
+      }
+      public final boolean isSelectExact() {
+        return which() == Message.Which.SELECT_EXACT;
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.SelectExact.Builder getSelectExact() {
+        assert which() == Message.Which.SELECT_EXACT:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectExact.factory, 0, null, 0);
+      }
+      public final void setSelectExact(dev.twelveoclock.supernovae.proto.CapnProto.SelectExact.Reader value) {
+        _setShortField(0, (short)Message.Which.SELECT_EXACT.ordinal());
+        _setPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectExact.factory,0, value);
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.SelectExact.Builder initSelectExact() {
+        _setShortField(0, (short)Message.Which.SELECT_EXACT.ordinal());
+        return _initPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectExact.factory,0, 0);
+      }
+      public final boolean isSelectN() {
+        return which() == Message.Which.SELECT_N;
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.SelectN.Builder getSelectN() {
+        assert which() == Message.Which.SELECT_N:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectN.factory, 0, null, 0);
+      }
+      public final void setSelectN(dev.twelveoclock.supernovae.proto.CapnProto.SelectN.Reader value) {
+        _setShortField(0, (short)Message.Which.SELECT_N.ordinal());
+        _setPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectN.factory,0, value);
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.SelectN.Builder initSelectN() {
+        _setShortField(0, (short)Message.Which.SELECT_N.ordinal());
+        return _initPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectN.factory,0, 0);
+      }
+      public final boolean isInsert() {
+        return which() == Message.Which.INSERT;
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.Insert.Builder getInsert() {
+        assert which() == Message.Which.INSERT:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.Insert.factory, 0, null, 0);
+      }
+      public final void setInsert(dev.twelveoclock.supernovae.proto.CapnProto.Insert.Reader value) {
+        _setShortField(0, (short)Message.Which.INSERT.ordinal());
+        _setPointerField(dev.twelveoclock.supernovae.proto.CapnProto.Insert.factory,0, value);
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.Insert.Builder initInsert() {
+        _setShortField(0, (short)Message.Which.INSERT.ordinal());
+        return _initPointerField(dev.twelveoclock.supernovae.proto.CapnProto.Insert.factory,0, 0);
+      }
+      public final boolean isUpdate() {
+        return which() == Message.Which.UPDATE;
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.Update.Builder getUpdate() {
+        assert which() == Message.Which.UPDATE:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.Update.factory, 0, null, 0);
+      }
+      public final void setUpdate(dev.twelveoclock.supernovae.proto.CapnProto.Update.Reader value) {
+        _setShortField(0, (short)Message.Which.UPDATE.ordinal());
+        _setPointerField(dev.twelveoclock.supernovae.proto.CapnProto.Update.factory,0, value);
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.Update.Builder initUpdate() {
+        _setShortField(0, (short)Message.Which.UPDATE.ordinal());
+        return _initPointerField(dev.twelveoclock.supernovae.proto.CapnProto.Update.factory,0, 0);
+      }
+      public final boolean isSelectResponse() {
+        return which() == Message.Which.SELECT_RESPONSE;
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.SelectResponse.Builder getSelectResponse() {
+        assert which() == Message.Which.SELECT_RESPONSE:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectResponse.factory, 0, null, 0);
+      }
+      public final void setSelectResponse(dev.twelveoclock.supernovae.proto.CapnProto.SelectResponse.Reader value) {
+        _setShortField(0, (short)Message.Which.SELECT_RESPONSE.ordinal());
+        _setPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectResponse.factory,0, value);
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.SelectResponse.Builder initSelectResponse() {
+        _setShortField(0, (short)Message.Which.SELECT_RESPONSE.ordinal());
+        return _initPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectResponse.factory,0, 0);
+      }
+      public final boolean isLoadTable() {
+        return which() == Message.Which.LOAD_TABLE;
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.LoadTable.Builder getLoadTable() {
+        assert which() == Message.Which.LOAD_TABLE:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.LoadTable.factory, 0, null, 0);
+      }
+      public final void setLoadTable(dev.twelveoclock.supernovae.proto.CapnProto.LoadTable.Reader value) {
+        _setShortField(0, (short)Message.Which.LOAD_TABLE.ordinal());
+        _setPointerField(dev.twelveoclock.supernovae.proto.CapnProto.LoadTable.factory,0, value);
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.LoadTable.Builder initLoadTable() {
+        _setShortField(0, (short)Message.Which.LOAD_TABLE.ordinal());
+        return _initPointerField(dev.twelveoclock.supernovae.proto.CapnProto.LoadTable.factory,0, 0);
+      }
+      public final boolean isUnloadRows() {
+        return which() == Message.Which.UNLOAD_ROWS;
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.UnloadRows.Builder getUnloadRows() {
+        assert which() == Message.Which.UNLOAD_ROWS:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.UnloadRows.factory, 0, null, 0);
+      }
+      public final void setUnloadRows(dev.twelveoclock.supernovae.proto.CapnProto.UnloadRows.Reader value) {
+        _setShortField(0, (short)Message.Which.UNLOAD_ROWS.ordinal());
+        _setPointerField(dev.twelveoclock.supernovae.proto.CapnProto.UnloadRows.factory,0, value);
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.UnloadRows.Builder initUnloadRows() {
+        _setShortField(0, (short)Message.Which.UNLOAD_ROWS.ordinal());
+        return _initPointerField(dev.twelveoclock.supernovae.proto.CapnProto.UnloadRows.factory,0, 0);
+      }
+      public final boolean isUnloadTable() {
+        return which() == Message.Which.UNLOAD_TABLE;
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.UnloadTable.Builder getUnloadTable() {
+        assert which() == Message.Which.UNLOAD_TABLE:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.UnloadTable.factory, 0, null, 0);
+      }
+      public final void setUnloadTable(dev.twelveoclock.supernovae.proto.CapnProto.UnloadTable.Reader value) {
+        _setShortField(0, (short)Message.Which.UNLOAD_TABLE.ordinal());
+        _setPointerField(dev.twelveoclock.supernovae.proto.CapnProto.UnloadTable.factory,0, value);
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.UnloadTable.Builder initUnloadTable() {
+        _setShortField(0, (short)Message.Which.UNLOAD_TABLE.ordinal());
+        return _initPointerField(dev.twelveoclock.supernovae.proto.CapnProto.UnloadTable.factory,0, 0);
+      }
+    }
+
+    public static final class Reader extends org.capnproto.StructReader {
+      Reader(org.capnproto.SegmentReader segment, int data, int pointers,int dataSize, short pointerCount, int nestingLimit){
+        super(segment, data, pointers, dataSize, pointerCount, nestingLimit);
+      }
+
+      public Which which() {
+        switch(_getShortField(0)) {
+          case 0 : return Which.CREATE_D_B;
+          case 1 : return Which.CREATE_TABLE;
+          case 2 : return Which.SELECT_D_B;
+          case 3 : return Which.SELECT;
+          case 4 : return Which.SELECT_FIRST;
+          case 5 : return Which.SELECT_EXACT;
+          case 6 : return Which.SELECT_N;
+          case 7 : return Which.INSERT;
+          case 8 : return Which.UPDATE;
+          case 9 : return Which.SELECT_RESPONSE;
+          case 10 : return Which.LOAD_TABLE;
+          case 11 : return Which.UNLOAD_ROWS;
+          case 12 : return Which.UNLOAD_TABLE;
+          default: return Which._NOT_IN_SCHEMA;
+        }
+      }
+      public final boolean isCreateDB() {
+        return which() == Message.Which.CREATE_D_B;
+      }
+      public boolean hasCreateDB() {
+        return !_pointerFieldIsNull(0);
+      }
+      public dev.twelveoclock.supernovae.proto.CapnProto.CreateDB.Reader getCreateDB() {
+        assert which() == Message.Which.CREATE_D_B:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.CreateDB.factory,0,null, 0);
+      }
+
+      public final boolean isCreateTable() {
+        return which() == Message.Which.CREATE_TABLE;
+      }
+      public boolean hasCreateTable() {
+        return !_pointerFieldIsNull(0);
+      }
+      public dev.twelveoclock.supernovae.proto.CapnProto.CreateTable.Reader getCreateTable() {
+        assert which() == Message.Which.CREATE_TABLE:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.CreateTable.factory,0,null, 0);
+      }
+
+      public final boolean isSelectDB() {
+        return which() == Message.Which.SELECT_D_B;
+      }
+      public boolean hasSelectDB() {
+        return !_pointerFieldIsNull(0);
+      }
+      public dev.twelveoclock.supernovae.proto.CapnProto.SelectDB.Reader getSelectDB() {
+        assert which() == Message.Which.SELECT_D_B:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectDB.factory,0,null, 0);
+      }
+
+      public final boolean isSelect() {
+        return which() == Message.Which.SELECT;
+      }
+      public boolean hasSelect() {
+        return !_pointerFieldIsNull(0);
+      }
+      public dev.twelveoclock.supernovae.proto.CapnProto.Select.Reader getSelect() {
+        assert which() == Message.Which.SELECT:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.Select.factory,0,null, 0);
+      }
+
+      public final boolean isSelectFirst() {
+        return which() == Message.Which.SELECT_FIRST;
+      }
+      public boolean hasSelectFirst() {
+        return !_pointerFieldIsNull(0);
+      }
+      public dev.twelveoclock.supernovae.proto.CapnProto.SelectFirst.Reader getSelectFirst() {
+        assert which() == Message.Which.SELECT_FIRST:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectFirst.factory,0,null, 0);
+      }
+
+      public final boolean isSelectExact() {
+        return which() == Message.Which.SELECT_EXACT;
+      }
+      public boolean hasSelectExact() {
+        return !_pointerFieldIsNull(0);
+      }
+      public dev.twelveoclock.supernovae.proto.CapnProto.SelectExact.Reader getSelectExact() {
+        assert which() == Message.Which.SELECT_EXACT:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectExact.factory,0,null, 0);
+      }
+
+      public final boolean isSelectN() {
+        return which() == Message.Which.SELECT_N;
+      }
+      public boolean hasSelectN() {
+        return !_pointerFieldIsNull(0);
+      }
+      public dev.twelveoclock.supernovae.proto.CapnProto.SelectN.Reader getSelectN() {
+        assert which() == Message.Which.SELECT_N:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectN.factory,0,null, 0);
+      }
+
+      public final boolean isInsert() {
+        return which() == Message.Which.INSERT;
+      }
+      public boolean hasInsert() {
+        return !_pointerFieldIsNull(0);
+      }
+      public dev.twelveoclock.supernovae.proto.CapnProto.Insert.Reader getInsert() {
+        assert which() == Message.Which.INSERT:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.Insert.factory,0,null, 0);
+      }
+
+      public final boolean isUpdate() {
+        return which() == Message.Which.UPDATE;
+      }
+      public boolean hasUpdate() {
+        return !_pointerFieldIsNull(0);
+      }
+      public dev.twelveoclock.supernovae.proto.CapnProto.Update.Reader getUpdate() {
+        assert which() == Message.Which.UPDATE:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.Update.factory,0,null, 0);
+      }
+
+      public final boolean isSelectResponse() {
+        return which() == Message.Which.SELECT_RESPONSE;
+      }
+      public boolean hasSelectResponse() {
+        return !_pointerFieldIsNull(0);
+      }
+      public dev.twelveoclock.supernovae.proto.CapnProto.SelectResponse.Reader getSelectResponse() {
+        assert which() == Message.Which.SELECT_RESPONSE:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.SelectResponse.factory,0,null, 0);
+      }
+
+      public final boolean isLoadTable() {
+        return which() == Message.Which.LOAD_TABLE;
+      }
+      public boolean hasLoadTable() {
+        return !_pointerFieldIsNull(0);
+      }
+      public dev.twelveoclock.supernovae.proto.CapnProto.LoadTable.Reader getLoadTable() {
+        assert which() == Message.Which.LOAD_TABLE:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.LoadTable.factory,0,null, 0);
+      }
+
+      public final boolean isUnloadRows() {
+        return which() == Message.Which.UNLOAD_ROWS;
+      }
+      public boolean hasUnloadRows() {
+        return !_pointerFieldIsNull(0);
+      }
+      public dev.twelveoclock.supernovae.proto.CapnProto.UnloadRows.Reader getUnloadRows() {
+        assert which() == Message.Which.UNLOAD_ROWS:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.UnloadRows.factory,0,null, 0);
+      }
+
+      public final boolean isUnloadTable() {
+        return which() == Message.Which.UNLOAD_TABLE;
+      }
+      public boolean hasUnloadTable() {
+        return !_pointerFieldIsNull(0);
+      }
+      public dev.twelveoclock.supernovae.proto.CapnProto.UnloadTable.Reader getUnloadTable() {
+        assert which() == Message.Which.UNLOAD_TABLE:
+                    "Must check which() before get()ing a union member.";
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.UnloadTable.factory,0,null, 0);
+      }
+
+    }
+
+    public enum Which {
+      CREATE_D_B,
+      CREATE_TABLE,
+      SELECT_D_B,
+      SELECT,
+      SELECT_FIRST,
+      SELECT_EXACT,
+      SELECT_N,
+      INSERT,
+      UPDATE,
+      SELECT_RESPONSE,
+      LOAD_TABLE,
+      UNLOAD_ROWS,
+      UNLOAD_TABLE,
+      _NOT_IN_SCHEMA,
+    }
+  }
+
+
   public static class CreateDB {
     public static final org.capnproto.StructSize STRUCT_SIZE = new org.capnproto.StructSize((short)0,(short)1);
     public static final class Factory extends org.capnproto.StructFactory<Builder, Reader> {
@@ -396,6 +852,90 @@ public final class CapnProto {
   }
 
 
+  public static class SelectExact {
+    public static final org.capnproto.StructSize STRUCT_SIZE = new org.capnproto.StructSize((short)0,(short)2);
+    public static final class Factory extends org.capnproto.StructFactory<Builder, Reader> {
+      public Factory() {
+      }
+      public final Reader constructReader(org.capnproto.SegmentReader segment, int data,int pointers, int dataSize, short pointerCount, int nestingLimit) {
+        return new Reader(segment,data,pointers,dataSize,pointerCount,nestingLimit);
+      }
+      public final Builder constructBuilder(org.capnproto.SegmentBuilder segment, int data,int pointers, int dataSize, short pointerCount) {
+        return new Builder(segment, data, pointers, dataSize, pointerCount);
+      }
+      public final org.capnproto.StructSize structSize() {
+        return SelectExact.STRUCT_SIZE;
+      }
+      public final Reader asReader(Builder builder) {
+        return builder.asReader();
+      }
+    }
+    public static final Factory factory = new Factory();
+    public static final org.capnproto.StructList.Factory<Builder,Reader> listFactory =
+      new org.capnproto.StructList.Factory<Builder, Reader>(factory);
+    public static final class Builder extends org.capnproto.StructBuilder {
+      Builder(org.capnproto.SegmentBuilder segment, int data, int pointers,int dataSize, short pointerCount){
+        super(segment, data, pointers, dataSize, pointerCount);
+      }
+      public final Reader asReader() {
+        return new Reader(segment, data, pointers, dataSize, pointerCount, 0x7fffffff);
+      }
+      public final boolean hasTableName() {
+        return !_pointerFieldIsNull(0);
+      }
+      public final org.capnproto.Text.Builder getTableName() {
+        return _getPointerField(org.capnproto.Text.factory, 0, null, 0, 0);
+      }
+      public final void setTableName(org.capnproto.Text.Reader value) {
+        _setPointerField(org.capnproto.Text.factory, 0, value);
+      }
+      public final void setTableName(String value) {
+        _setPointerField(org.capnproto.Text.factory, 0, new org.capnproto.Text.Reader(value));
+      }
+      public final org.capnproto.Text.Builder initTableName(int size) {
+        return _initPointerField(org.capnproto.Text.factory, 0, size);
+      }
+      public final boolean hasKeyColumnValue() {
+        return !_pointerFieldIsNull(1);
+      }
+      public final org.capnproto.Text.Builder getKeyColumnValue() {
+        return _getPointerField(org.capnproto.Text.factory, 1, null, 0, 0);
+      }
+      public final void setKeyColumnValue(org.capnproto.Text.Reader value) {
+        _setPointerField(org.capnproto.Text.factory, 1, value);
+      }
+      public final void setKeyColumnValue(String value) {
+        _setPointerField(org.capnproto.Text.factory, 1, new org.capnproto.Text.Reader(value));
+      }
+      public final org.capnproto.Text.Builder initKeyColumnValue(int size) {
+        return _initPointerField(org.capnproto.Text.factory, 1, size);
+      }
+    }
+
+    public static final class Reader extends org.capnproto.StructReader {
+      Reader(org.capnproto.SegmentReader segment, int data, int pointers,int dataSize, short pointerCount, int nestingLimit){
+        super(segment, data, pointers, dataSize, pointerCount, nestingLimit);
+      }
+
+      public boolean hasTableName() {
+        return !_pointerFieldIsNull(0);
+      }
+      public org.capnproto.Text.Reader getTableName() {
+        return _getPointerField(org.capnproto.Text.factory, 0, null, 0, 0);
+      }
+
+      public boolean hasKeyColumnValue() {
+        return !_pointerFieldIsNull(1);
+      }
+      public org.capnproto.Text.Reader getKeyColumnValue() {
+        return _getPointerField(org.capnproto.Text.factory, 1, null, 0, 0);
+      }
+
+    }
+
+  }
+
+
   public static class SelectN {
     public static final org.capnproto.StructSize STRUCT_SIZE = new org.capnproto.StructSize((short)1,(short)2);
     public static final class Factory extends org.capnproto.StructFactory<Builder, Reader> {
@@ -573,7 +1113,7 @@ public final class CapnProto {
 
 
   public static class Update {
-    public static final org.capnproto.StructSize STRUCT_SIZE = new org.capnproto.StructSize((short)0,(short)3);
+    public static final org.capnproto.StructSize STRUCT_SIZE = new org.capnproto.StructSize((short)0,(short)4);
     public static final class Factory extends org.capnproto.StructFactory<Builder, Reader> {
       public Factory() {
       }
@@ -615,35 +1155,50 @@ public final class CapnProto {
       public final org.capnproto.Text.Builder initTableName(int size) {
         return _initPointerField(org.capnproto.Text.factory, 0, size);
       }
-      public final boolean hasColumnName() {
+      public final boolean hasKeyColumnValue() {
         return !_pointerFieldIsNull(1);
       }
-      public final org.capnproto.Text.Builder getColumnName() {
+      public final org.capnproto.Text.Builder getKeyColumnValue() {
         return _getPointerField(org.capnproto.Text.factory, 1, null, 0, 0);
       }
-      public final void setColumnName(org.capnproto.Text.Reader value) {
+      public final void setKeyColumnValue(org.capnproto.Text.Reader value) {
         _setPointerField(org.capnproto.Text.factory, 1, value);
       }
-      public final void setColumnName(String value) {
+      public final void setKeyColumnValue(String value) {
         _setPointerField(org.capnproto.Text.factory, 1, new org.capnproto.Text.Reader(value));
       }
-      public final org.capnproto.Text.Builder initColumnName(int size) {
+      public final org.capnproto.Text.Builder initKeyColumnValue(int size) {
         return _initPointerField(org.capnproto.Text.factory, 1, size);
       }
-      public final boolean hasValue() {
+      public final boolean hasColumnName() {
         return !_pointerFieldIsNull(2);
       }
-      public final org.capnproto.Text.Builder getValue() {
+      public final org.capnproto.Text.Builder getColumnName() {
         return _getPointerField(org.capnproto.Text.factory, 2, null, 0, 0);
       }
-      public final void setValue(org.capnproto.Text.Reader value) {
+      public final void setColumnName(org.capnproto.Text.Reader value) {
         _setPointerField(org.capnproto.Text.factory, 2, value);
       }
-      public final void setValue(String value) {
+      public final void setColumnName(String value) {
         _setPointerField(org.capnproto.Text.factory, 2, new org.capnproto.Text.Reader(value));
       }
-      public final org.capnproto.Text.Builder initValue(int size) {
+      public final org.capnproto.Text.Builder initColumnName(int size) {
         return _initPointerField(org.capnproto.Text.factory, 2, size);
+      }
+      public final boolean hasValue() {
+        return !_pointerFieldIsNull(3);
+      }
+      public final org.capnproto.Text.Builder getValue() {
+        return _getPointerField(org.capnproto.Text.factory, 3, null, 0, 0);
+      }
+      public final void setValue(org.capnproto.Text.Reader value) {
+        _setPointerField(org.capnproto.Text.factory, 3, value);
+      }
+      public final void setValue(String value) {
+        _setPointerField(org.capnproto.Text.factory, 3, new org.capnproto.Text.Reader(value));
+      }
+      public final org.capnproto.Text.Builder initValue(int size) {
+        return _initPointerField(org.capnproto.Text.factory, 3, size);
       }
     }
 
@@ -659,18 +1214,25 @@ public final class CapnProto {
         return _getPointerField(org.capnproto.Text.factory, 0, null, 0, 0);
       }
 
-      public boolean hasColumnName() {
+      public boolean hasKeyColumnValue() {
         return !_pointerFieldIsNull(1);
       }
-      public org.capnproto.Text.Reader getColumnName() {
+      public org.capnproto.Text.Reader getKeyColumnValue() {
         return _getPointerField(org.capnproto.Text.factory, 1, null, 0, 0);
       }
 
-      public boolean hasValue() {
+      public boolean hasColumnName() {
         return !_pointerFieldIsNull(2);
       }
-      public org.capnproto.Text.Reader getValue() {
+      public org.capnproto.Text.Reader getColumnName() {
         return _getPointerField(org.capnproto.Text.factory, 2, null, 0, 0);
+      }
+
+      public boolean hasValue() {
+        return !_pointerFieldIsNull(3);
+      }
+      public org.capnproto.Text.Reader getValue() {
+        return _getPointerField(org.capnproto.Text.factory, 3, null, 0, 0);
       }
 
     }
@@ -792,6 +1354,84 @@ public final class CapnProto {
       }
       public org.capnproto.Text.Reader getTableName() {
         return _getPointerField(org.capnproto.Text.factory, 0, null, 0, 0);
+      }
+
+    }
+
+  }
+
+
+  public static class LoadRows {
+    public static final org.capnproto.StructSize STRUCT_SIZE = new org.capnproto.StructSize((short)0,(short)2);
+    public static final class Factory extends org.capnproto.StructFactory<Builder, Reader> {
+      public Factory() {
+      }
+      public final Reader constructReader(org.capnproto.SegmentReader segment, int data,int pointers, int dataSize, short pointerCount, int nestingLimit) {
+        return new Reader(segment,data,pointers,dataSize,pointerCount,nestingLimit);
+      }
+      public final Builder constructBuilder(org.capnproto.SegmentBuilder segment, int data,int pointers, int dataSize, short pointerCount) {
+        return new Builder(segment, data, pointers, dataSize, pointerCount);
+      }
+      public final org.capnproto.StructSize structSize() {
+        return LoadRows.STRUCT_SIZE;
+      }
+      public final Reader asReader(Builder builder) {
+        return builder.asReader();
+      }
+    }
+    public static final Factory factory = new Factory();
+    public static final org.capnproto.StructList.Factory<Builder,Reader> listFactory =
+      new org.capnproto.StructList.Factory<Builder, Reader>(factory);
+    public static final class Builder extends org.capnproto.StructBuilder {
+      Builder(org.capnproto.SegmentBuilder segment, int data, int pointers,int dataSize, short pointerCount){
+        super(segment, data, pointers, dataSize, pointerCount);
+      }
+      public final Reader asReader() {
+        return new Reader(segment, data, pointers, dataSize, pointerCount, 0x7fffffff);
+      }
+      public final boolean hasTableName() {
+        return !_pointerFieldIsNull(0);
+      }
+      public final org.capnproto.Text.Builder getTableName() {
+        return _getPointerField(org.capnproto.Text.factory, 0, null, 0, 0);
+      }
+      public final void setTableName(org.capnproto.Text.Reader value) {
+        _setPointerField(org.capnproto.Text.factory, 0, value);
+      }
+      public final void setTableName(String value) {
+        _setPointerField(org.capnproto.Text.factory, 0, new org.capnproto.Text.Reader(value));
+      }
+      public final org.capnproto.Text.Builder initTableName(int size) {
+        return _initPointerField(org.capnproto.Text.factory, 0, size);
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.Filter.Builder getFilter() {
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.Filter.factory, 1, null, 0);
+      }
+      public final void setFilter(dev.twelveoclock.supernovae.proto.CapnProto.Filter.Reader value) {
+        _setPointerField(dev.twelveoclock.supernovae.proto.CapnProto.Filter.factory,1, value);
+      }
+      public final dev.twelveoclock.supernovae.proto.CapnProto.Filter.Builder initFilter() {
+        return _initPointerField(dev.twelveoclock.supernovae.proto.CapnProto.Filter.factory,1, 0);
+      }
+    }
+
+    public static final class Reader extends org.capnproto.StructReader {
+      Reader(org.capnproto.SegmentReader segment, int data, int pointers,int dataSize, short pointerCount, int nestingLimit){
+        super(segment, data, pointers, dataSize, pointerCount, nestingLimit);
+      }
+
+      public boolean hasTableName() {
+        return !_pointerFieldIsNull(0);
+      }
+      public org.capnproto.Text.Reader getTableName() {
+        return _getPointerField(org.capnproto.Text.factory, 0, null, 0, 0);
+      }
+
+      public boolean hasFilter() {
+        return !_pointerFieldIsNull(1);
+      }
+      public dev.twelveoclock.supernovae.proto.CapnProto.Filter.Reader getFilter() {
+        return _getPointerField(dev.twelveoclock.supernovae.proto.CapnProto.Filter.factory,1,null, 0);
       }
 
     }
@@ -996,19 +1636,19 @@ public final class CapnProto {
         _setShortField(0, (short)value.ordinal());
       }
 
-      public final boolean hasExpectedValue() {
+      public final boolean hasCompareToValue() {
         return !_pointerFieldIsNull(1);
       }
-      public final org.capnproto.Text.Builder getExpectedValue() {
+      public final org.capnproto.Text.Builder getCompareToValue() {
         return _getPointerField(org.capnproto.Text.factory, 1, null, 0, 0);
       }
-      public final void setExpectedValue(org.capnproto.Text.Reader value) {
+      public final void setCompareToValue(org.capnproto.Text.Reader value) {
         _setPointerField(org.capnproto.Text.factory, 1, value);
       }
-      public final void setExpectedValue(String value) {
+      public final void setCompareToValue(String value) {
         _setPointerField(org.capnproto.Text.factory, 1, new org.capnproto.Text.Reader(value));
       }
-      public final org.capnproto.Text.Builder initExpectedValue(int size) {
+      public final org.capnproto.Text.Builder initCompareToValue(int size) {
         return _initPointerField(org.capnproto.Text.factory, 1, size);
       }
     }
@@ -1036,10 +1676,10 @@ public final class CapnProto {
         }
       }
 
-      public boolean hasExpectedValue() {
+      public boolean hasCompareToValue() {
         return !_pointerFieldIsNull(1);
       }
-      public org.capnproto.Text.Reader getExpectedValue() {
+      public org.capnproto.Text.Reader getCompareToValue() {
         return _getPointerField(org.capnproto.Text.factory, 1, null, 0, 0);
       }
 
@@ -1059,6 +1699,229 @@ public final class CapnProto {
 
 
 public static final class Schemas {
+public static final org.capnproto.SegmentReader b_9c63d8afbc958760 =
+   org.capnproto.GeneratedClassSupport.decodeRawBytes(
+   "\u0000\u0000\u0000\u0000\u0005\u0000\u0006\u0000" +
+   "\u0060\u0087\u0095\u00bc\u00af\u00d8\u0063\u009c" +
+   "\u0010\u0000\u0000\u0000\u0001\u0000\u0001\u0000" +
+   "\u00e5\u00a0\u00a7\u0034\u0029\u00ab\u00d7\u00c1" +
+   "\u0001\u0000\u0007\u0000\u0000\u0000\r\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0015\u0000\u0000\u0000\u00c2\u0000\u0000\u0000" +
+   "\u001d\u0000\u0000\u0000\u0007\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0019\u0000\u0000\u0000\u00df\u0002\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0043\u0061\u0070\u006e\u0050\u0072\u006f\u0074" +
+   "\u006f\u002e\u0063\u0061\u0070\u006e\u0070\u003a" +
+   "\u004d\u0065\u0073\u0073\u0061\u0067\u0065\u0000" +
+   "\u0000\u0000\u0000\u0000\u0001\u0000\u0001\u0000" +
+   "\u0034\u0000\u0000\u0000\u0003\u0000\u0004\u0000" +
+   "\u0000\u0000\u00ff\u00ff\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u005d\u0001\u0000\u0000\u004a\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\\\u0001\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u0068\u0001\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0001\u0000\u00fe\u00ff\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\u0001\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0065\u0001\u0000\u0000\u0062\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0064\u0001\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u0070\u0001\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0002\u0000\u00fd\u00ff\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\u0002\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u006d\u0001\u0000\u0000\u004a\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u006c\u0001\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u0078\u0001\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0003\u0000\u00fc\u00ff\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\u0003\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0075\u0001\u0000\u0000\u003a\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0070\u0001\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u007c\u0001\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0004\u0000\u00fb\u00ff\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\u0004\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0079\u0001\u0000\u0000\u0062\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0078\u0001\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u0084\u0001\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0005\u0000\u00fa\u00ff\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\u0005\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0081\u0001\u0000\u0000\u0062\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0080\u0001\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u008c\u0001\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0006\u0000\u00f9\u00ff\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\u0006\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0089\u0001\u0000\u0000\u0042\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0084\u0001\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u0090\u0001\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0007\u0000\u00f8\u00ff\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\u0007\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u008d\u0001\u0000\u0000\u003a\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0088\u0001\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u0094\u0001\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0008\u0000\u00f7\u00ff\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\u0008\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0091\u0001\u0000\u0000\u003a\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u008c\u0001\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u0098\u0001\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0009\u0000\u00f6\u00ff\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\u0009\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0095\u0001\u0000\u0000\u007a\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0094\u0001\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u00a0\u0001\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\n\u0000\u00f5\u00ff\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\n\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u009d\u0001\u0000\u0000\u0052\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u009c\u0001\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u00a8\u0001\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u000b\u0000\u00f4\u00ff\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\u000b\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u00a5\u0001\u0000\u0000\u005a\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u00a4\u0001\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u00b0\u0001\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u000c\u0000\u00f3\u00ff\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\u000c\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u00ad\u0001\u0000\u0000\u0062\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u00ac\u0001\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u00b8\u0001\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0063\u0072\u0065\u0061\u0074\u0065\u0044\u0042" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u006a\u00d6\u00bc\u00f2\u004c\u00a9\u001d\u0088" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0063\u0072\u0065\u0061\u0074\u0065\u0054\u0061" +
+   "\u0062\u006c\u0065\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0061\u000f\r\u0011\u0011\u0098\u00e2\u00b5" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0073\u0065\u006c\u0065\u0063\u0074\u0044\u0042" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u00b5\u00ec\u00de\u004e\u0026\u0020\u004c\u00ed" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0073\u0065\u006c\u0065\u0063\u0074\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u00f3\u00c9\u0067\u0041\u0067\u0003\u00a9\u00ff" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0073\u0065\u006c\u0065\u0063\u0074\u0046\u0069" +
+   "\u0072\u0073\u0074\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\"\u00db\u00a3\u006f\u00c4\u0013\u006b\u00a5" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0073\u0065\u006c\u0065\u0063\u0074\u0045\u0078" +
+   "\u0061\u0063\u0074\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u00a4\u0065\u0006\u003b\u00f9\u0092\u00ea\u008f" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0073\u0065\u006c\u0065\u0063\u0074\u004e\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u001b\u0000\u006b\u001d\u007e\u00de\u004f\u00cc" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0069\u006e\u0073\u0065\u0072\u0074\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u00d5\u0053\u00d3\u001e\u006e\u0031\u001e\u00bf" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0075\u0070\u0064\u0061\u0074\u0065\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u002b\u0009\u009a\u0049\u0065\u002c\u0044\u00eb" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0073\u0065\u006c\u0065\u0063\u0074\u0052\u0065" +
+   "\u0073\u0070\u006f\u006e\u0073\u0065\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u00b0\u006c\u00b4\u00cf\u00d2\u008a\u0067\u0097" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u006c\u006f\u0061\u0064\u0054\u0061\u0062\u006c" +
+   "\u0065\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u008e\u0050\u0056\u00ab\u00c5\u00a3\u0023\u00ad" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0075\u006e\u006c\u006f\u0061\u0064\u0052\u006f" +
+   "\u0077\u0073\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u00c9\u00b7\u00cd\u006a\u0008\u0054\u0055\u00cd" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0075\u006e\u006c\u006f\u0061\u0064\u0054\u0061" +
+   "\u0062\u006c\u0065\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0037\u003c\u0072\u00aa\u003f\u006f\u0099\u0099" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" + "");
 public static final org.capnproto.SegmentReader b_881da94cf2bcd66a =
    org.capnproto.GeneratedClassSupport.decodeRawBytes(
    "\u0000\u0000\u0000\u0000\u0005\u0000\u0006\u0000" +
@@ -1324,6 +2187,58 @@ public static final org.capnproto.SegmentReader b_a56b13c46fa3db22 =
    "\u0001\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" + "");
+public static final org.capnproto.SegmentReader b_8fea92f93b0665a4 =
+   org.capnproto.GeneratedClassSupport.decodeRawBytes(
+   "\u0000\u0000\u0000\u0000\u0005\u0000\u0006\u0000" +
+   "\u00a4\u0065\u0006\u003b\u00f9\u0092\u00ea\u008f" +
+   "\u0010\u0000\u0000\u0000\u0001\u0000\u0000\u0000" +
+   "\u00e5\u00a0\u00a7\u0034\u0029\u00ab\u00d7\u00c1" +
+   "\u0002\u0000\u0007\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0015\u0000\u0000\u0000\u00e2\u0000\u0000\u0000" +
+   "\u0021\u0000\u0000\u0000\u0007\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u001d\u0000\u0000\u0000\u0077\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0043\u0061\u0070\u006e\u0050\u0072\u006f\u0074" +
+   "\u006f\u002e\u0063\u0061\u0070\u006e\u0070\u003a" +
+   "\u0053\u0065\u006c\u0065\u0063\u0074\u0045\u0078" +
+   "\u0061\u0063\u0074\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0001\u0000\u0001\u0000" +
+   "\u0008\u0000\u0000\u0000\u0003\u0000\u0004\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0029\u0000\u0000\u0000\u0052\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0028\u0000\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u0034\u0000\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0001\u0000\u0000\u0000\u0001\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\u0001\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0031\u0000\u0000\u0000\u007a\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0030\u0000\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u003c\u0000\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0074\u0061\u0062\u006c\u0065\u004e\u0061\u006d" +
+   "\u0065\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u000c\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u000c\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u006b\u0065\u0079\u0043\u006f\u006c\u0075\u006d" +
+   "\u006e\u0056\u0061\u006c\u0075\u0065\u0000\u0000" +
+   "\u000c\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u000c\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" + "");
 public static final org.capnproto.SegmentReader b_cc4fde7e1d6b001b =
    org.capnproto.GeneratedClassSupport.decodeRawBytes(
    "\u0000\u0000\u0000\u0000\u0005\u0000\u0006\u0000" +
@@ -1449,42 +2364,58 @@ public static final org.capnproto.SegmentReader b_eb442c65499a092b =
    "\u002b\u0009\u009a\u0049\u0065\u002c\u0044\u00eb" +
    "\u0010\u0000\u0000\u0000\u0001\u0000\u0000\u0000" +
    "\u00e5\u00a0\u00a7\u0034\u0029\u00ab\u00d7\u00c1" +
-   "\u0003\u0000\u0007\u0000\u0000\u0000\u0000\u0000" +
+   "\u0004\u0000\u0007\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0015\u0000\u0000\u0000\u00ba\u0000\u0000\u0000" +
    "\u001d\u0000\u0000\u0000\u0007\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0019\u0000\u0000\u0000\u00af\u0000\u0000\u0000" +
+   "\u0019\u0000\u0000\u0000\u00e7\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0043\u0061\u0070\u006e\u0050\u0072\u006f\u0074" +
    "\u006f\u002e\u0063\u0061\u0070\u006e\u0070\u003a" +
    "\u0055\u0070\u0064\u0061\u0074\u0065\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0001\u0000\u0001\u0000" +
-   "\u000c\u0000\u0000\u0000\u0003\u0000\u0004\u0000" +
+   "\u0010\u0000\u0000\u0000\u0003\u0000\u0004\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0001\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0045\u0000\u0000\u0000\u0052\u0000\u0000\u0000" +
+   "\u0061\u0000\u0000\u0000\u0052\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0044\u0000\u0000\u0000\u0003\u0000\u0001\u0000" +
-   "\u0050\u0000\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0060\u0000\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u006c\u0000\u0000\u0000\u0002\u0000\u0001\u0000" +
    "\u0001\u0000\u0000\u0000\u0001\u0000\u0000\u0000" +
    "\u0000\u0000\u0001\u0000\u0001\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u004d\u0000\u0000\u0000\u005a\u0000\u0000\u0000" +
+   "\u0069\u0000\u0000\u0000\u007a\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u004c\u0000\u0000\u0000\u0003\u0000\u0001\u0000" +
-   "\u0058\u0000\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0068\u0000\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u0074\u0000\u0000\u0000\u0002\u0000\u0001\u0000" +
    "\u0002\u0000\u0000\u0000\u0002\u0000\u0000\u0000" +
    "\u0000\u0000\u0001\u0000\u0002\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0055\u0000\u0000\u0000\u0032\u0000\u0000\u0000" +
+   "\u0071\u0000\u0000\u0000\u005a\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0050\u0000\u0000\u0000\u0003\u0000\u0001\u0000" +
-   "\\\u0000\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0070\u0000\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u007c\u0000\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0003\u0000\u0000\u0000\u0003\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\u0003\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0079\u0000\u0000\u0000\u0032\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0074\u0000\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u0080\u0000\u0000\u0000\u0002\u0000\u0001\u0000" +
    "\u0074\u0061\u0062\u006c\u0065\u004e\u0061\u006d" +
    "\u0065\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u000c\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u000c\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u006b\u0065\u0079\u0043\u006f\u006c\u0075\u006d" +
+   "\u006e\u0056\u0061\u006c\u0075\u0065\u0000\u0000" +
    "\u000c\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
@@ -1582,6 +2513,57 @@ public static final org.capnproto.SegmentReader b_ad23a3c5ab56508e =
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u000c\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" + "");
+public static final org.capnproto.SegmentReader b_929b0ace4e99148f =
+   org.capnproto.GeneratedClassSupport.decodeRawBytes(
+   "\u0000\u0000\u0000\u0000\u0005\u0000\u0006\u0000" +
+   "\u008f\u0014\u0099\u004e\u00ce\n\u009b\u0092" +
+   "\u0010\u0000\u0000\u0000\u0001\u0000\u0000\u0000" +
+   "\u00e5\u00a0\u00a7\u0034\u0029\u00ab\u00d7\u00c1" +
+   "\u0002\u0000\u0007\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0015\u0000\u0000\u0000\u00ca\u0000\u0000\u0000" +
+   "\u0021\u0000\u0000\u0000\u0007\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u001d\u0000\u0000\u0000\u0077\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0043\u0061\u0070\u006e\u0050\u0072\u006f\u0074" +
+   "\u006f\u002e\u0063\u0061\u0070\u006e\u0070\u003a" +
+   "\u004c\u006f\u0061\u0064\u0052\u006f\u0077\u0073" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0001\u0000\u0001\u0000" +
+   "\u0008\u0000\u0000\u0000\u0003\u0000\u0004\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0029\u0000\u0000\u0000\u0052\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0028\u0000\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u0034\u0000\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0001\u0000\u0000\u0000\u0001\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\u0001\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0031\u0000\u0000\u0000\u003a\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u002c\u0000\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u0038\u0000\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0074\u0061\u0062\u006c\u0065\u004e\u0061\u006d" +
+   "\u0065\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u000c\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u000c\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0066\u0069\u006c\u0074\u0065\u0072\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u00a1\u0058\u00f1\u0061\u00c6\u0036\u00fb\u00ea" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" + "");
 public static final org.capnproto.SegmentReader b_cd5554086acdb7c9 =
@@ -1707,7 +2689,7 @@ public static final org.capnproto.SegmentReader b_eafb36c661f158a1 =
    "\u0002\u0000\u0000\u0000\u0001\u0000\u0000\u0000" +
    "\u0000\u0000\u0001\u0000\u0002\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0051\u0000\u0000\u0000\u0072\u0000\u0000\u0000" +
+   "\u0051\u0000\u0000\u0000\u007a\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0050\u0000\u0000\u0000\u0003\u0000\u0001\u0000" +
    "\\\u0000\u0000\u0000\u0002\u0000\u0001\u0000" +
@@ -1728,8 +2710,8 @@ public static final org.capnproto.SegmentReader b_eafb36c661f158a1 =
    "\u000f\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0065\u0078\u0070\u0065\u0063\u0074\u0065\u0064" +
-   "\u0056\u0061\u006c\u0075\u0065\u0000\u0000\u0000" +
+   "\u0063\u006f\u006d\u0070\u0061\u0072\u0065\u0054" +
+   "\u006f\u0056\u0061\u006c\u0075\u0065\u0000\u0000" +
    "\u000c\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
