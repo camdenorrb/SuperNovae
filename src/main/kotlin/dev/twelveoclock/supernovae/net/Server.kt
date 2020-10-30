@@ -54,8 +54,6 @@ class Server internal constructor(
     fun connectHandler(client: Client) {
 
 
-        val message = MessageReader(emptyArray(), ReaderOptions.DEFAULT_READER_OPTIONS)
-            .getRoot(CapnProto.Message.factory)
 
         message.
 

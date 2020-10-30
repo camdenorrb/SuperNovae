@@ -18,3 +18,15 @@ dependencies {
     implementation("me.camdenorrb:Netlius:1.0-SNAPSHOT")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0")
 }
+
+tasks {
+    compileKotlin {
+        kotlinOptions.jvmTarget = "14"
+    }
+    compileTestKotlin {
+        kotlinOptions.jvmTarget = "14"
+    }
+    wrapper {
+        gradleVersion = "6.7"
+    }
+}

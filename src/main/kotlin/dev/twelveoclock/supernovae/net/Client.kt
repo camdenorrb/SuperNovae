@@ -1,6 +1,8 @@
 package dev.twelveoclock.supernovae.net
 
 import dev.twelveoclock.supernovae.proto.CapnProto
+import org.capnproto.MessageReader
+import org.capnproto.ReaderOptions
 import kotlin.reflect.KProperty1
 import me.camdenorrb.netlius.net.Client as NetClient
 
@@ -13,6 +15,15 @@ class Client internal constructor(val netClient: NetClient) {
     }
 
     suspend fun readMessage(): CapnProto.Message {
+
+        netClient.read(netClient.readInt()) {
+            val message = MessageReader(arrayOf(this), ReaderOptions.DEFAULT_READER_OPTIONS)
+                .getRoot(CapnProto.Message.factory)
+
+            message.
+            Unit
+        }
+
 
     }
 
