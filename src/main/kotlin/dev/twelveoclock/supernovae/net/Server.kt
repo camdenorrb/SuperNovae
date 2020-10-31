@@ -4,8 +4,6 @@ import dev.twelveoclock.supernovae.api.Database
 import dev.twelveoclock.supernovae.proto.CapnProto
 import me.camdenorrb.netlius.Netlius
 import org.capnproto.MessageBuilder
-import org.capnproto.MessageReader
-import org.capnproto.ReaderOptions
 
 //import me.camdenorrb.netlius.net.Client as NetClient
 
@@ -46,7 +44,7 @@ class Server internal constructor(
         }
 
         netServer.stop()
-
+        
         isRunning = false
     }
 
