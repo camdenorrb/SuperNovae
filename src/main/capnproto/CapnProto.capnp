@@ -19,9 +19,10 @@ struct Message @0x9c63d8afbc958760 {
         insert @7 :Insert;
         update @8 :Update;
         selectResponse @9 :SelectResponse;
-        loadTable @10 :LoadTable;
-        unloadRows @11 :UnloadRows;
-        unloadTable @12 :UnloadTable;
+        loadRows @10 :LoadRows;
+        loadTable @11 :LoadTable;
+        unloadRows @12 :UnloadRows;
+        unloadTable @13 :UnloadTable;
     }
 }
 

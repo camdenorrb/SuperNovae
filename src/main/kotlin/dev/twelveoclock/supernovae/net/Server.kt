@@ -1,13 +1,13 @@
 package dev.twelveoclock.supernovae.net
 
 import dev.twelveoclock.supernovae.api.Database
-import dev.twelveoclock.supernovae.proto.CapnProto
+import dev.twelveoclock.supernovae.ext.readNovaeMessage
 import me.camdenorrb.netlius.Netlius
-import org.capnproto.MessageBuilder
+import me.camdenorrb.netlius.net.Client
 
 //import me.camdenorrb.netlius.net.Client as NetClient
 
-class Server internal constructor(
+class Server(
     val host: String,
     val port: Int,
     val database: Database
@@ -21,7 +21,7 @@ class Server internal constructor(
 
     init {
         netServer.onConnect {
-            connectHandler(Client(it))
+            connectHandler(it)
         }
     }
 
@@ -49,16 +49,10 @@ class Server internal constructor(
     }
 
 
-    fun connectHandler(client: Client) {
+    private suspend fun connectHandler(client: Client) {
+        // TODO: Add handling of messages
 
-
-
-        message.
-
-        CapnProto.Filter.Reader()
-        MessageBuilder(CapnProto.Filter.listFactory.).
-        SerializePacked.
-        client.netClient.
+        println(client.readNovaeMessage().which())
     }
 
 }
