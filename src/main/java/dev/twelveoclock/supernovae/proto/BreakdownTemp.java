@@ -1,5 +1,7 @@
 package dev.twelveoclock.supernovae.proto;
 
+/*
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class BreakdownTemp {
@@ -57,6 +59,10 @@ public class BreakdownTemp {
                     tag = (byte) ((bitI << i) | tag);
                 }
             }
+
+
+            byte tag = (byte)((bit0 << 0) | (bit1 << 1) | (bit2 << 2) | (bit3 << 3) |
+                    (bit4 << 4) | (bit5 << 5) | (bit6 << 6) | (bit7 << 7));
 
             out.put(tagPos, tag);
 
@@ -148,4 +154,4 @@ public class BreakdownTemp {
         return length;
     }
 }
-
+*/

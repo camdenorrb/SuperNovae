@@ -1,17 +1,24 @@
 package dev.twelveoclock.supernovae.ext
 
 import dev.twelveoclock.supernovae.proto.CapnProto
+import me.camdenorrb.netlius.Netlius
 import me.camdenorrb.netlius.net.Client
 import me.camdenorrb.netlius.net.Packet
+import org.capnproto.ArrayInputStream
+import org.capnproto.ArrayOutputStream
 import org.capnproto.MessageBuilder
-import org.capnproto.MessageReader
-import org.capnproto.ReaderOptions
 import org.capnproto.SerializePacked
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 suspend fun Client.sendNovaeMessage(message: MessageBuilder) {
 
+    byteBufferPool.take(Netlius.DEFAULT_BUFFER_SIZE) {
+        SerializePacked.write(ArrayOutputStream(it), message)
+        queueAndFlush(Packet().int(it.limit()).byteBuffer(it))
+    }
+
+    /*
+
+    SerializePacked.writeToUnbuffered()
     val segments = message.segmentsForOutput
     val tableSize = segments.size + 2 and 1.inv()
 
@@ -50,15 +57,21 @@ suspend fun Client.sendNovaeMessage(message: MessageBuilder) {
         queueAndFlush(
             Packet().int(it.limit()).bytes(it.array()),
         )
-    }
+    }*/
 }
 
 suspend fun Client.readNovaeMessage(): CapnProto.Message.Reader {
 
+    return read(readInt()) {
+        SerializePacked.read(ArrayInputStream(this)).getRoot(CapnProto.Message.factory)
+    }
+
+    /*
     val segments = Array<ByteBuffer>(readInt()) {
         ByteBuffer.wrap(readBytes(readInt()))
     }
 
     return MessageReader(segments, ReaderOptions.DEFAULT_READER_OPTIONS)
         .getRoot(CapnProto.Message.factory)
+    */
 }

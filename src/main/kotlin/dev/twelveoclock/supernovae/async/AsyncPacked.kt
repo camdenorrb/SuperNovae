@@ -1,11 +1,9 @@
 package dev.twelveoclock.supernovae.async
 
-import me.camdenorrb.netlius.net.Client
-import java.nio.ByteBuffer
-
 // A conversion from CapnProto's implementation that is async
 // https://capnproto.org/encoding.html
 // Packed is a simple algorithm that deflates 0's
+/*
 object AsyncPacked {
 
     suspend fun compress(byteBuffer: ByteBuffer) {
@@ -164,4 +162,4 @@ object AsyncPacked {
 
     }
 
-}
+}*/

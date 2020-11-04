@@ -9,12 +9,12 @@ $Java.outerClassname("CapnProto");
 
 struct Message @0x9c63d8afbc958760 {
     union {
-        createDB @0 :CreateDB;
+        createDb @0 :CreateDB;
         createTable @1 :CreateTable;
-        selectDB @2 :SelectDB;
+        selectDb @2 :SelectDB;
         select @3 :Select;
         selectFirst @4 :SelectFirst;
-        selectExact @5 :SelectExact;
+        selectKey @5 :SelectKey;
         selectN @6 :SelectN;
         insert @7 :Insert;
         update @8 :Update;
@@ -33,6 +33,7 @@ struct CreateDB @0x881da94cf2bcd66a {
 struct CreateTable @0xb5e29811110d0f61 {
     tableName @0 :Text;
     keyColumn @1 :Text;
+    shouldCacheAll @2 :Bool;
 }
 
 struct SelectDB @0xed4c20264edeecb5 {
@@ -42,16 +43,18 @@ struct SelectDB @0xed4c20264edeecb5 {
 struct Select @0xffa903674167c9f3 {
     tableName @0 :Text;
     filters @1 :List(Filter);
-    loadIntoCache @2 :Bool = false;
+    onlyCheckCache @2 :Bool = false;
+    loadIntoCache @3 :Bool = false;
 }
 
 struct SelectFirst @0xa56b13c46fa3db22 {
     tableName @0 :Text;
     filters @1 :List(Filter);
-    loadIntoCache @2 :Bool = false;
+    onlyCheckCache @2 :Bool = false;
+    loadIntoCache @3 :Bool = false;
 }
 
-struct SelectExact @0x8fea92f93b0665a4 {
+struct SelectKey @0x8fea92f93b0665a4 {
     tableName @0 :Text;
     keyColumnValue @1 :Text;
 }
@@ -59,7 +62,8 @@ struct SelectExact @0x8fea92f93b0665a4 {
 struct SelectN @0xcc4fde7e1d6b001b {
     tableName @0 :Text;
     filters @1 :List(Filter);
-    amount @2 :UInt16;
+    amountOfRows @2 :UInt16;
+    onlyCheckCache @3 :Bool = false;
 }
 
 struct Insert @0xbf1e316e1ed353d5 {
@@ -72,12 +76,20 @@ struct Update @0xeb442c65499a092b {
     keyColumnValue @1 :Text;
     columnName @2 :Text;
     value @3 :Text; # Json value
+    onlyCheckCache @4 :Bool = false;
 }
 
+#struct SelectResponsePrepend @0xd060986e353ccb49 {
+    # Rows will be encoded in Json
+    # Maybe move to a compressed format in the future
+#    amountOfRows @0 :UInt16;
+#}
+
+# This will be sent N amount of times
 struct SelectResponse @0x97678ad2cfb46cb0 {
     # Rows will be encoded in Json
     # Maybe move to a compressed format in the future
-    rows @0 :List(Text);
+    row @0 :Text;
 }
 
 # Loads a table into cache
@@ -88,12 +100,14 @@ struct LoadTable @0xad23a3c5ab56508e {
 struct LoadRows @0x929b0ace4e99148f {
     tableName @0 :Text;
     filter @1 :Filter;
+    onlyCheckCache @2 :Bool = false;
 }
 
 
 struct UnloadRows @0xcd5554086acdb7c9 {
     tableName @0 :Text;
     filter @1 :Filter;
+    onlyCheckCache @2 :Bool = false;
 }
 
 struct UnloadTable @0x99996f3faa723c37 {

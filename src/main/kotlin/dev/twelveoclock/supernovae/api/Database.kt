@@ -1,10 +1,10 @@
 package dev.twelveoclock.supernovae.api
 
+import dev.twelveoclock.supernovae.ext.invoke
 import dev.twelveoclock.supernovae.proto.CapnProto
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import java.io.File
 
 // This is gonna be local only, expand upon in Server
@@ -104,10 +104,11 @@ data class Database(val folder: File) {
             }
         }
 
-        fun filter(filter: Filter): List<JsonObject> {
+        // TODO: Add a way to specify amount to filter for optimization
+        fun filter(filter: Filter, amount: Int? = null, onlyCheckCache: Boolean = false): List<JsonObject> {
 
             // Do optimized filter
-            if (shouldCacheAll) {
+            if (shouldCacheAll || onlyCheckCache) {
                 return cachedRows.values.filter {
                     filter.check(it.getValue(filter.columnName), filter.value)
                 }
@@ -143,30 +144,18 @@ data class Database(val folder: File) {
             }
         }
 
-        private operator fun CapnProto.Check.invoke(value1: JsonElement, value2: JsonElement): Boolean {
-
-            if (this == CapnProto.Check.EQUAL) {
-                return value1 == value2
-            }
-
-            val value1Number = (value1 as? JsonPrimitive)?.content?.toDoubleOrNull() ?: return false
-            val value2Number = (value2 as? JsonPrimitive)?.content?.toDoubleOrNull() ?: return false
-
-            return when (this) {
-
-                CapnProto.Check.GREATER_THAN -> value1Number > value2Number
-                CapnProto.Check.LESSER_THAN -> value1Number < value2Number
-                CapnProto.Check.LESSER_THAN_OR_EQUAL -> value1Number <= value2Number
-                CapnProto.Check.GREATER_THAN_OR_EQUAL -> value1Number >= value2Number
-
-                else -> false
-            }
-        }
-
 
         companion object {
 
             const val FILE_EXTENSION = ".json"
+
+        }
+
+    }
+
+    companion object {
+
+        fun loadFromFolder() {
 
         }
 
