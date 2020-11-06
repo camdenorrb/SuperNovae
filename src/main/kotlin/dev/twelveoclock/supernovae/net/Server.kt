@@ -5,6 +5,7 @@ import dev.twelveoclock.supernovae.ext.filter
 import dev.twelveoclock.supernovae.ext.readNovaeMessage
 import dev.twelveoclock.supernovae.ext.sendNovaeMessage
 import dev.twelveoclock.supernovae.proto.CapnProto
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import me.camdenorrb.netlius.Netlius
@@ -161,7 +162,6 @@ class Server(
             selectedRows = selectedRows?.filter(filter) ?: selectedTable.filter(filter, 1, message.onlyCheckCache)
         }
 
-
         queueAndFlush(Packet().int(if (selectedRows?.isEmpty() == true) 0 else 1))
 
         val row = selectedRows?.first()
@@ -228,10 +228,31 @@ class Server(
 
     private fun Client.insert(message: CapnProto.Insert.Reader) {
 
+        val selectedDatabase = checkNotNull(selectedDatabase[this]) {
+            "You must select a database in order to select rows in a table."
+        }
+
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString().toLowerCase()]) {
+            "Unable to find table '${message.tableName}'."
+        }
+
+        val jsonObject = Json.decodeFromString(JsonObject.serializer(), message.row.toString())
+
+        selectedTable.insert(jsonObject, message.shouldCache)
     }
 
-    private suspend fun Client.update(message: CapnProto.Update.Reader) {
+    // TODO: Make responses for everything
+    private fun Client.update(message: CapnProto.Update.Reader) {
 
+        val selectedDatabase = checkNotNull(selectedDatabase[this]) {
+            "You must select a database in order to select rows in a table."
+        }
+
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString().toLowerCase()]) {
+            "Unable to find table '${message.tableName}'."
+        }
+
+        selectedTable.update(Database.Filter.fromCapnProto(message.filter), message.columnName.toString(), message.value.toString(), message.amountOfRows.takeIf { it != 0 }, message.onlyCheckCache)
     }
 
 

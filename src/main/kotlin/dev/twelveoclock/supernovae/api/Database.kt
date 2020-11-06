@@ -2,9 +2,7 @@ package dev.twelveoclock.supernovae.api
 
 import dev.twelveoclock.supernovae.ext.invoke
 import dev.twelveoclock.supernovae.proto.CapnProto
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.*
 import java.io.File
 
 // This is gonna be local only, expand upon in Server
@@ -70,6 +68,33 @@ data class Database(val folder: File) {
             }
         }
 
+        // Might not be possible?
+        fun update(filter: Filter, columnName: String, value: String, amount: Int? = null, onlyCheckCache: Boolean) {
+
+            check(columnName != keyColumn) {
+                "You currently cannot change the key column value"
+            }
+
+            filter(filter, amount, onlyCheckCache).forEach {
+
+                val shouldCache = cachedRows.containsKey(it.getValue(keyColumn).toString().toLowerCase())
+                val objectAsMap = it.toMutableMap()
+
+                objectAsMap[columnName] = when(objectAsMap[columnName]) {
+
+                    JsonNull -> JsonNull
+
+                    is JsonArray -> Json.decodeFromString(JsonArray.serializer(), value)
+                    is JsonObject -> Json.decodeFromString(JsonObject.serializer(), value)
+                    is JsonPrimitive -> Json.decodeFromString(JsonPrimitive.serializer(), value)
+
+                    else -> error("Can't update to a value with unregistered type, current value: '${objectAsMap[columnName]}'")
+                }
+
+                insert(JsonObject(objectAsMap), shouldCache)
+            }
+        }
+
         fun uncache(filter: Filter) {
 
             if (shouldCacheAll) {
@@ -105,6 +130,7 @@ data class Database(val folder: File) {
         }
 
         // TODO: Add a way to specify amount to filter for optimization
+        // TODO: Check if keyColumn is the only thing being filtered and do an optimized search if so
         fun filter(filter: Filter, amount: Int? = null, onlyCheckCache: Boolean = false): List<JsonObject> {
 
             // Do optimized filter

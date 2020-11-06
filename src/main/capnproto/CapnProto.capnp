@@ -62,27 +62,29 @@ struct SelectKey @0x8fea92f93b0665a4 {
 struct SelectN @0xcc4fde7e1d6b001b {
     tableName @0 :Text;
     filters @1 :List(Filter);
-    amountOfRows @2 :UInt16;
+    amountOfRows @2 :UInt32;
     onlyCheckCache @3 :Bool = false;
 }
 
 struct Insert @0xbf1e316e1ed353d5 {
     tableName @0 :Text;
     row @1 :Text; # Json value
+    shouldCache @2 :Bool = false;
 }
 
 struct Update @0xeb442c65499a092b {
     tableName @0 :Text;
-    keyColumnValue @1 :Text;
+    filter @1 :Filter;
     columnName @2 :Text;
     value @3 :Text; # Json value
+    amountOfRows @5 :UInt32 = 0; # 0 represents all
     onlyCheckCache @4 :Bool = false;
 }
 
 #struct SelectResponsePrepend @0xd060986e353ccb49 {
     # Rows will be encoded in Json
     # Maybe move to a compressed format in the future
-#    amountOfRows @0 :UInt16;
+#    amountOfRows @0 :UInt32;
 #}
 
 # This will be sent N amount of times
