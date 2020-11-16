@@ -17,8 +17,8 @@ operator fun CapnProto.Check.invoke(value1: JsonElement, value2: JsonElement): B
     return when (this) {
 
         CapnProto.Check.GREATER_THAN -> value1Number > value2Number
-        CapnProto.Check.LESSER_THAN -> value1Number < value2Number
-        CapnProto.Check.LESSER_THAN_OR_EQUAL -> value1Number <= value2Number
+        CapnProto.Check.LESSER_THAN  -> value1Number < value2Number
+        CapnProto.Check.LESSER_THAN_OR_EQUAL  -> value1Number <= value2Number
         CapnProto.Check.GREATER_THAN_OR_EQUAL -> value1Number >= value2Number
 
         else -> false

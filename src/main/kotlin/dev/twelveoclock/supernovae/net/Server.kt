@@ -1,6 +1,7 @@
 package dev.twelveoclock.supernovae.net
 
 import dev.twelveoclock.supernovae.api.Database
+import dev.twelveoclock.supernovae.ext.build
 import dev.twelveoclock.supernovae.ext.filter
 import dev.twelveoclock.supernovae.ext.readNovaeMessage
 import dev.twelveoclock.supernovae.ext.sendNovaeMessage
@@ -94,10 +95,13 @@ class Server(
                 CapnProto.Message.Which._NOT_IN_SCHEMA -> error("Unknown message received.")
             }
         }
+
+        selectedDatabase.remove(client)
     }
 
 
     private fun Client.createDB(message: CapnProto.CreateDB.Reader) {
+        println(message.databaseName.toString())
         val database = Database(File(serverFolder, message.databaseName.toString()))
         databases[message.databaseName.toString().toLowerCase()] = database
     }
@@ -129,7 +133,7 @@ class Server(
         var selectedRows: List<JsonObject>? = null
 
         message.filters.forEach {
-            val filter = Database.Filter.fromCapnProto(it)
+            val filter = Database.Filter.fromCapnProtoReader(it)
             selectedRows = selectedRows?.filter(filter) ?: selectedTable.filter(filter)
         }
 
@@ -158,7 +162,7 @@ class Server(
         var selectedRows: List<JsonObject>? = null
 
         message.filters.forEach {
-            val filter = Database.Filter.fromCapnProto(it)
+            val filter = Database.Filter.fromCapnProtoReader(it)
             selectedRows = selectedRows?.filter(filter) ?: selectedTable.filter(filter, 1, message.onlyCheckCache)
         }
 
@@ -187,13 +191,15 @@ class Server(
         val filter = Database.Filter(selectedTable.keyColumn, CapnProto.Check.EQUAL, keyValuePrimitive)
         val matchedRow = selectedTable.filter(filter, 1).firstOrNull() ?: return
 
-        queueAndFlush(Packet().int(1))
+        //queueAndFlush(Packet().int(1))
 
-        val builder = MessageBuilder()
-        val selectResponse = builder.initRoot(CapnProto.SelectResponse.factory)
+        val response = CapnProto.Message.factory.build {
+            initSelectResponse().apply {
+                setRow(matchedRow.toString())
+            }
+        }
 
-        selectResponse.setRow(matchedRow.toString())
-        sendNovaeMessage(builder)
+        sendNovaeMessage(response)
     }
 
     private suspend fun Client.selectN(message: CapnProto.SelectN.Reader) {
@@ -209,8 +215,8 @@ class Server(
         var selectedRows: List<JsonObject>? = null
 
         message.filters.forEach {
-            val filter = Database.Filter.fromCapnProto(it)
-            selectedRows = selectedRows?.filter(filter) ?: selectedTable.filter(filter, message.amountOfRows.toInt(), message.onlyCheckCache)
+            val filter = Database.Filter.fromCapnProtoReader(it)
+            selectedRows = selectedRows?.filter(filter) ?: selectedTable.filter(filter, message.amountOfRows, message.onlyCheckCache)
         }
 
         queueAndFlush(Packet().int(selectedRows?.size ?: 0))
@@ -252,25 +258,43 @@ class Server(
             "Unable to find table '${message.tableName}'."
         }
 
-        selectedTable.update(Database.Filter.fromCapnProto(message.filter), message.columnName.toString(), message.value.toString(), message.amountOfRows.takeIf { it != 0 }, message.onlyCheckCache)
+        selectedTable.update(Database.Filter.fromCapnProtoReader(message.filter), message.columnName.toString(), message.value.toString(), message.amountOfRows.takeIf { it != 0 }, message.onlyCheckCache)
     }
 
 
-    private suspend fun Client.loadRows(message: CapnProto.LoadRows.Reader) {
+    private fun Client.loadRows(message: CapnProto.LoadRows.Reader) {
 
+        val selectedDatabase = checkNotNull(selectedDatabase[this]) {
+            "You must select a database in order to select rows in a table."
+        }
+
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString().toLowerCase()]) {
+            "Unable to find table '${message.tableName}'."
+        }
+
+        selectedTable.cache(Database.Filter.fromCapnProtoReader(message.filter))
     }
 
-    private suspend fun Client.loadTable(message: CapnProto.LoadTable.Reader) {
-
+    private fun Client.loadTable(message: CapnProto.LoadTable.Reader) {
+        TODO("Do in the future?")
     }
 
 
-    private suspend fun Client.unloadRows(message: CapnProto.UnloadRows.Reader) {
+    private fun Client.unloadRows(message: CapnProto.UnloadRows.Reader) {
 
+        val selectedDatabase = checkNotNull(selectedDatabase[this]) {
+            "You must select a database in order to select rows in a table."
+        }
+
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString().toLowerCase()]) {
+            "Unable to find table '${message.tableName}'."
+        }
+
+        selectedTable.uncache(Database.Filter.fromCapnProtoReader(message.filter))
     }
 
     private suspend fun Client.unloadTable(message: CapnProto.UnloadTable.Reader) {
-
+        TODO("Do in the future?")
     }
 
 }

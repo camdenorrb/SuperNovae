@@ -3,6 +3,7 @@ package dev.twelveoclock.supernovae.api
 import dev.twelveoclock.supernovae.ext.invoke
 import dev.twelveoclock.supernovae.proto.CapnProto
 import kotlinx.serialization.json.*
+import org.capnproto.MessageBuilder
 import java.io.File
 
 // This is gonna be local only, expand upon in Server
@@ -52,16 +53,16 @@ data class Database(val folder: File) {
 
         fun insert(row: JsonObject, shouldCache: Boolean) {
 
-            // https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/json.md#parsing-to-json-element
+            // https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/JSON.md#parsing-to-json-element
 
             /*
-            (Json.parseToJsonElement("") as JsonObject).
+            (JSON.parseToJsonElement("") as JsonObject).
             val insert = MessageBuilder().initRoot(CapnProto.Insert.factory).apply {
                 setTableName(name)
             }
             */
 
-            File(folder, "${row.getValue(keyColumn)}$FILE_EXTENSION").apply { createNewFile() }.writeText(row.toString())
+            File(folder, "${row.getValue(keyColumn)}$FILE_EXTENSION").apply { createNewFile() }.writeText(JSON.encodeToString(JsonObject.serializer(), row))
 
             if (shouldCache || shouldCacheAll) {
                 cachedRows[row[keyColumn].toString()] = row
@@ -84,9 +85,9 @@ data class Database(val folder: File) {
 
                     JsonNull -> JsonNull
 
-                    is JsonArray -> Json.decodeFromString(JsonArray.serializer(), value)
-                    is JsonObject -> Json.decodeFromString(JsonObject.serializer(), value)
-                    is JsonPrimitive -> Json.decodeFromString(JsonPrimitive.serializer(), value)
+                    is JsonArray -> JSON.decodeFromString(JsonArray.serializer(), value)
+                    is JsonObject -> JSON.decodeFromString(JsonObject.serializer(), value)
+                    is JsonPrimitive -> JSON.decodeFromString(JsonPrimitive.serializer(), value)
 
                     else -> error("Can't update to a value with unregistered type, current value: '${objectAsMap[columnName]}'")
                 }
@@ -154,7 +155,7 @@ data class Database(val folder: File) {
                     it.nameWithoutExtension !in cachedRows
                 }
                 .map {
-                    Json.parseToJsonElement(it.readText()) as JsonObject
+                    JSON.parseToJsonElement(it.readText()) as JsonObject
                 }
                 .filter {
                     filter.check(it.getValue(filter.columnName), filter.value)
@@ -165,8 +166,8 @@ data class Database(val folder: File) {
 
 
         private fun cacheAllRows() {
-            folder.listFiles()!!.forEach {
-                Json.parseToJsonElement(it.readText())
+            folder.listFiles()?.forEach {
+                JSON.parseToJsonElement(it.readText())
             }
         }
 
@@ -181,6 +182,8 @@ data class Database(val folder: File) {
 
     companion object {
 
+        val JSON = Json { prettyPrint = true }
+
         fun loadFromFolder() {
 
         }
@@ -193,12 +196,24 @@ data class Database(val folder: File) {
         val value: JsonElement
     ) {
 
+        fun toCapnProtoReader(): CapnProto.Filter.Reader {
+
+            val builder = MessageBuilder()
+
+            return builder.initRoot(CapnProto.Filter.factory).also {
+                it.setColumnName(columnName)
+                it.check = check
+                it.setCompareToValue(value.toString())
+            }.asReader()
+        }
+
+
         companion object {
 
-            fun fromCapnProto(filter: CapnProto.Filter.Reader): Filter {
+            fun fromCapnProtoReader(filter: CapnProto.Filter.Reader): Filter {
 
                 val columnName = filter.columnName.toString()
-                val compareToValue = Json.parseToJsonElement(filter.compareToValue.toString())
+                val compareToValue = JSON.parseToJsonElement(filter.compareToValue.toString())
 
                 return Filter(columnName, filter.check, compareToValue)
             }
