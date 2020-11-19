@@ -1,44 +1,77 @@
 package dev.twelveoclock.supernovae.ext
 
 import dev.twelveoclock.supernovae.api.Database
-import dev.twelveoclock.supernovae.async.ClientCapnProto
 import dev.twelveoclock.supernovae.proto.CapnProto
 import me.camdenorrb.netlius.net.Client
+import me.camdenorrb.netlius.net.Packet
 import org.capnproto.MessageBuilder
-import org.capnproto.ReaderOptions
+import org.capnproto.SerializePacked
+import java.nio.ByteBuffer
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
 
 suspend fun Client.sendNovaeMessage(message: MessageBuilder) {
-    ClientCapnProto.push(this, message)
+
+    /*
+    Files.newByteChannel(Paths.get("output1.bin"), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE).use { outputChannel ->
+        org.capnproto.Serialize.write(
+            outputChannel,
+            message
+        )
+    }*/
+
+    Files.newByteChannel(Paths.get("output2.bin"), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE).use { outputChannel ->
+        org.capnproto.SerializePacked.writeToUnbuffered(
+            outputChannel,
+            message
+        )
+    }
+
+    val bytes = Files.readAllBytes(Paths.get("output2.bin"))
+    //val output1Size = Files.size(Paths.get("output1.bin"))
+    queueAndFlush(Packet().int(bytes.size).bytes(bytes))
+    //ClientCapnProto.pushPacked(this, message)
 }
 
 suspend fun Client.readNovaeMessage(): CapnProto.Message.Reader {
 
-    //Packed.unpack(this, )
-    //Serialize.read()
-    return ClientCapnProto.pull(this, ReaderOptions.DEFAULT_READER_OPTIONS)
-        .getRoot(CapnProto.Message.factory)
+    val bytes = suspendReadBytes(suspendReadInt())
 
+    val weirdByteBufferBufferedInputStream = object : org.capnproto.BufferedInputStream {
 
-    //return SerializePacked.readFromUnbuffered(ClientByteChannel(this))
-    //    .getRoot(CapnProto.Message.factory)
-
-
-    /*
-    return read(readInt()) {
-        ArrayInputStream(this).use { stream ->
-            SerializePacked.read(stream).getRoot(CapnProto.Message.factory)
+        override fun close() {
+            //TODO("not implemented")
         }
+
+        override fun isOpen(): Boolean {
+            //TODO("not implemented")
+            return true
+        }
+
+        override fun read(dst: ByteBuffer): Int {
+            dst.put(bytes)
+            return bytes.size
+        }
+
+        override fun getReadBuffer(): ByteBuffer {
+            return ByteBuffer.wrap(bytes)
+        }
+
     }
-    */
+    weirdByteBufferBufferedInputStream.use { inputStream ->
+
+        val message = SerializePacked.read(
+            inputStream,
+        )
+
+        return message.getRoot(CapnProto.Message.factory)
+    }
 
     /*
-    val segments = Array<ByteBuffer>(readInt()) {
-        ByteBuffer.wrap(readBytes(readInt()))
-    }
-
-    return MessageReader(segments, ReaderOptions.DEFAULT_READER_OPTIONS)
+    return ClientCapnProto.pullPacked(this, ReaderOptions.DEFAULT_READER_OPTIONS)
         .getRoot(CapnProto.Message.factory)
-    */
+        */
 }
 
 suspend fun Client.sendCreateDB(dbName: String) {
@@ -52,13 +85,24 @@ suspend fun Client.sendCreateDB(dbName: String) {
     sendNovaeMessage(message)
 }
 
-suspend fun Client.sendCreateTable(keyColumn: String, tableName: String, shouldCacheAll: Boolean = false) {
+suspend fun Client.sendCreateTable(tableName: String, keyColumn: String, shouldCacheAll: Boolean = false) {
 
     val message = CapnProto.Message.factory.build {
         initCreateTable().apply {
             setKeyColumn(keyColumn)
             setTableName(tableName)
             setShouldCacheAll(shouldCacheAll)
+        }
+    }
+
+    sendNovaeMessage(message)
+}
+
+suspend fun Client.sendDeleteDB(dbName: String) {
+
+    val message = CapnProto.Message.factory.build {
+        initDeleteDb().apply {
+            setDatabaseName(dbName)
         }
     }
 
@@ -76,7 +120,7 @@ suspend fun Client.sendSelectDB(dbName: String) {
     sendNovaeMessage(message)
 }
 
-suspend fun Client.sendSelectRows(filters: List<Database.Filter>, tableName: String, onlyCheckCache: Boolean = false, loadIntoCache: Boolean = false, amountOfRows: Int = 0): CapnProto.SelectResponse.Reader {
+suspend fun Client.sendSelectRows(filters: List<Database.Filter>, tableName: String, onlyCheckCache: Boolean = false, loadIntoCache: Boolean = false, amountOfRows: Int = 0): List<CapnProto.SelectRowResponse.Reader> {
 
     val message = CapnProto.Message.factory.build {
         initSelectRows().apply {
@@ -96,74 +140,29 @@ suspend fun Client.sendSelectRows(filters: List<Database.Filter>, tableName: Str
 
     sendNovaeMessage(message)
 
-    return readNovaeMessage().selectResponse
+    return (1..suspendReadInt()).map {
+        readNovaeMessage().selectRowResponse
+    }
 }
 
-/*
-suspend fun Client.sendSelectFirst(tableName: String, filters: List<Database.Filter>, onlyCheckCache: Boolean = false, loadIntoCache: Boolean = false): CapnProto.SelectResponse.Reader {
+suspend fun Client.sendDeleteRow(tableName: String, amountOfRows: Int = 0) {
 
     val message = CapnProto.Message.factory.build {
-        initSelectFirst().apply {
+        initDeleteRows().apply {
 
-            val filterStructList = initFilters(filters.size)
+            val filterStructList = initFilters(filters.size())
 
             filters.forEachIndexed { index, filter ->
-                filterStructList.setWithCaveats(CapnProto.Filter.factory, index, filter.toCapnProtoReader())
-            }
-
-            setTableName(tableName)
-            setOnlyCheckCache(onlyCheckCache)
-            setLoadIntoCache(loadIntoCache)
-        }
-    }
-
-    sendNovaeMessage(message)
-
-    return readNovaeMessage().selectResponse
-}
-*/
-
-
-/*
-suspend fun Client.sendSelectByKey(tableName: String, keyColumnValue: String): CapnProto.SelectResponse.Reader {
-
-    val message = CapnProto.Message.factory.build {
-        initSelectRows().apply {
-            setTableName(tableName)
-            setKeyColumnValue(keyColumnValue)
-        }
-    }
-
-    sendNovaeMessage(message)
-
-    return readNovaeMessage().apply { println("Here: ${which()}") /*This sucks*/ }.selectResponse
-}
-*/
-
-
-/*
-suspend fun Client.sendSelectN(tableName: String, filters: List<Database.Filter>, amountOfRows: Int, onlyCheckCache: Boolean = false): CapnProto.SelectResponse.Reader {
-
-    val message = CapnProto.Message.factory.build {
-        initSelectN().apply {
-
-            val filterStructList = initFilters(filters.size)
-
-            filters.forEachIndexed { index, filter ->
-                filterStructList.setWithCaveats(CapnProto.Filter.factory, index, filter.toCapnProtoReader())
+                filterStructList.setWithCaveats(CapnProto.Filter.factory, index, filter.asReader())
             }
 
             setTableName(tableName)
             setAmountOfRows(amountOfRows)
-            setOnlyCheckCache(onlyCheckCache)
         }
     }
 
     sendNovaeMessage(message)
-
-    return readNovaeMessage().selectResponse
 }
-*/
 
 suspend fun Client.sendInsertRow(tableName: String, row: String, shouldCache: Boolean = false) {
 
@@ -194,10 +193,10 @@ suspend fun Client.sendUpdateRows(tableName: String, columnName: String, value: 
     sendNovaeMessage(message)
 }
 
-suspend fun Client.sendLoadRows(tableName: String, filter: Database.Filter, onlyCheckCache: Boolean) {
+suspend fun Client.sendCacheRows(tableName: String, filter: Database.Filter, onlyCheckCache: Boolean) {
 
     val message = CapnProto.Message.factory.build {
-        initLoadRows().apply {
+        initCacheRows().apply {
             setTableName(tableName)
             setFilter(filter.toCapnProtoReader())
             setOnlyCheckCache(onlyCheckCache)
@@ -207,10 +206,45 @@ suspend fun Client.sendLoadRows(tableName: String, filter: Database.Filter, only
     sendNovaeMessage(message)
 }
 
-suspend fun Client.sendLoadTable(tableName: String) {
+suspend fun Client.sendCacheTable(tableName: String) {
 
     val message = CapnProto.Message.factory.build {
-        initLoadTable().apply {
+        initCacheTable().apply {
+            setTableName(tableName)
+        }.asReader()
+    }
+
+    sendNovaeMessage(message)
+}
+
+suspend fun Client.sendSelectTable(tableName: String): CapnProto.SelectTableResponse.Reader {
+
+    val message = CapnProto.Message.factory.build {
+        initSelectTable().apply {
+            setTableName(tableName)
+        }.asReader()
+    }
+
+    sendNovaeMessage(message)
+
+    return readNovaeMessage().selectTableResponse
+}
+
+suspend fun Client.sendUnloadTable(tableName: String) {
+
+    val message = CapnProto.Message.factory.build {
+        initUncacheTable().apply {
+            setTableName(tableName)
+        }.asReader()
+    }
+
+    sendNovaeMessage(message)
+}
+
+suspend fun Client.sendDeleteTable(tableName: String) {
+
+    val message = CapnProto.Message.factory.build {
+        initDeleteTable().apply {
             setTableName(tableName)
         }.asReader()
     }

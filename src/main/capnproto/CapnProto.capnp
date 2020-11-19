@@ -10,19 +10,21 @@ $Java.outerClassname("CapnProto");
 struct Message @0x9c63d8afbc958760 {
     union {
         createDb @0 :CreateDB;
-        deleteDB @1 :DeleteDB;
+        deleteDb @1 :DeleteDB;
         createTable @2 :CreateTable;
         selectDb @3 :SelectDB;
         selectRows @4 :SelectRows;
         deleteRows @5 :DeleteRows;
         insertRow @6 :InsertRow;
         updateRows @7 :UpdateRows;
-        selectResponse @8 :SelectResponse;
-        loadRows @9 :LoadRows;
-        loadTable @10 :LoadTable;
-        unloadRows @11 :UnloadRows;
-        unloadTable @12 :UnloadTable;
-        deleteTable @13 :DeleteTable;
+        selectRowResponse @8 :SelectRowResponse;
+        selectTableResponse @9 :SelectTableResponse;
+        cacheRows @10 :CacheRows;
+        cacheTable @11 :CacheTable;
+        uncacheRows @12 :UncacheRows;
+        uncacheTable @13 :UncacheTable;
+        deleteTable @14 :DeleteTable;
+        selectTable @15 :SelectTable;
     }
 }
 
@@ -52,31 +54,12 @@ struct SelectRows @0xffa903674167c9f3 {
     amountOfRows @4 :UInt32 = 0; # 0 represents all
 }
 
-# struct SelectFirstRow @0xa56b13c46fa3db22 {
-#    tableName @0 :Text;
-#    filters @1 :List(Filter);
-#    onlyCheckCache @2 :Bool = false;
-#    loadIntoCache @3 :Bool = false;
-# }
-
-# TODO: Remove this and just do optimizations on Select
-# struct SelectByKey @0x8fea92f93b0665a4 {
-#     tableName @0 :Text;
-#     keyColumnValue @1 :Text;
-# }
-
 struct DeleteRows @0xa8bf202a88766929 {
     tableName @0 :Text;
     filters @1 :List(Filter);
     amountOfRows @2 :UInt32 = 0; # 0 represents all
+    onlyCheckCache @3 :Bool = false;
 }
-
-# struct SelectNRows @0xcc4fde7e1d6b001b {
-#    tableName @0 :Text;
-#    filters @1 :List(Filter);
-#    amountOfRows @2 :UInt32;
-#    onlyCheckCache @3 :Bool = false;
-# }
 
 struct InsertRow @0xbf1e316e1ed353d5 {
     tableName @0 :Text;
@@ -93,38 +76,44 @@ struct UpdateRows @0xeb442c65499a092b {
     onlyCheckCache @4 :Bool = false;
 }
 
-# struct SelectResponsePrepend @0xd060986e353ccb49 {
-# Rows will be encoded in Json
-# Maybe move to a compressed format in the future
-#     amountOfRows @0 :UInt32;
-# }
-
 # This will be sent N amount of times
-struct SelectResponse @0x97678ad2cfb46cb0 {
+struct SelectRowResponse @0x97678ad2cfb46cb0 {
     # Rows will be encoded in Json
     # Maybe move to a compressed format in the future
     row @0 :Text;
 }
 
+struct SelectTableResponse @0x9e0fc6cba7b04f47 {
+tableName @0 :Text;
+    keyColumn @1 :Text;
+    shouldCacheAll @2 :Bool;
+}
+
+# Select a table into cache
+struct SelectTable @0x99040191d9151dc0 {
+    tableName @0 :Text;
+}
+
+
 # Loads a table into cache
-struct LoadTable @0xad23a3c5ab56508e {
+struct CacheTable @0xad23a3c5ab56508e {
     tableName @0 :Text;
 }
 
-struct LoadRows @0x929b0ace4e99148f {
-    tableName @0 :Text;
-    filter @1 :Filter;
-    onlyCheckCache @2 :Bool = false;
-}
-
-
-struct UnloadRows @0xcd5554086acdb7c9 {
+struct CacheRows @0x929b0ace4e99148f {
     tableName @0 :Text;
     filter @1 :Filter;
     onlyCheckCache @2 :Bool = false;
 }
 
-struct UnloadTable @0x99996f3faa723c37 {
+
+struct UncacheRows @0xcd5554086acdb7c9 {
+    tableName @0 :Text;
+    filter @1 :Filter;
+    onlyCheckCache @2 :Bool = false;
+}
+
+struct UncacheTable @0x99996f3faa723c37 {
     tableName @0 :Text;
 }
 

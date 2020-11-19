@@ -30,12 +30,15 @@ data class Database(val folder: File) {
 
     // TODO: Make a cache on connect, and update through change listeners - Nvm, this is gonna be only local
 
-    data class Table(
+    class Table(
         val name: String,
-        val shouldCacheAll: Boolean,
+        shouldCacheAll: Boolean,
         val keyColumn: String,
         val folder: File,
     ) {
+
+        var shouldCacheAll = shouldCacheAll
+            private set
 
         // Key Column Value -> Json Object Row
         val cachedRows = mutableMapOf<String, JsonObject>()
@@ -165,10 +168,26 @@ data class Database(val folder: File) {
         }
 
 
-        private fun cacheAllRows() {
+        fun uncacheAllRows() {
+
+            if (!shouldCacheAll) {
+                return
+            }
+
+            shouldCacheAll = false
+        }
+
+        fun cacheAllRows() {
+
+            if (shouldCacheAll) {
+                return
+            }
+
             folder.listFiles()?.forEach {
                 JSON.parseToJsonElement(it.readText())
             }
+
+            shouldCacheAll = true
         }
 
 

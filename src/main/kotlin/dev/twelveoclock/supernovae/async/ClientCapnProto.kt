@@ -178,7 +178,7 @@ object ClientCapnProto {
     // TODO: Replace outBuffer with a ByteBufferWriterChannel
     suspend fun unpack(input: ByteBufferReaderChannel): ByteBuffer {
 
-        val outBuffer = ByteBuffer.allocate(input.suspendReadInt())//.order(ByteOrder.LITTLE_ENDIAN)
+        val outBuffer = ByteBuffer.allocate(input.suspendReadInt().also { println(it) })//.order(ByteOrder.LITTLE_ENDIAN)
         //val compressedSize = input.suspendReadInt()
         //val startPosition = outBuffer.position()
 

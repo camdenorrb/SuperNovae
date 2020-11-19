@@ -1,15 +1,12 @@
 package me.camdenorrb.supernovae
 
 import dev.twelveoclock.supernovae.SuperNovae
-import dev.twelveoclock.supernovae.api.Database
 import dev.twelveoclock.supernovae.async.ClientCapnProto
 import dev.twelveoclock.supernovae.ext.*
-import dev.twelveoclock.supernovae.proto.CapnProto
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonPrimitive
 import me.camdenorrb.kcommons.ext.getBytes
 import me.camdenorrb.netlius.Netlius
 import java.io.File
@@ -32,22 +29,38 @@ class ServerTest {
 
         runBlocking {
 
-            val client = Netlius.client("127.0.0.1", 12345)
+            val client = Netlius.client("127.0.0.1", 12345)//Client("127.0.0.1", 12345)
+            //val client = Netlius.client("127.0.0.1", 12345)
 
-            //client.sendCreateDB("MeowDB")
-            //client.sendCreateDB("MeowDB")
             client.sendCreateDB("MeowDB")
-
             client.sendSelectDB("MeowDB")
-            client.sendCreateTable(Thing::name.name, "MeowTable", true)
+            client.sendCreateTable("MeowTable", Thing::name.name, true)
+            client.sendSelectTable("MeowTable")
+            val thing = Thing("Mr.Midnight", "Cool")
+            println(Json.encodeToString(Thing.serializer(), thing))
+            client.sendInsertRow("MeowTable", Json.encodeToString(Thing.serializer(), thing))
+            //val rows = client.sendSelectRows(listOf(Database.Filter("name", CapnProto.Check.EQUAL, JsonPrimitive("Mr.Midnight"))), "MeowTable")
+
+            //rows.forEach {
+            //    println(it.row.toString())
+            //}
+
+            //client.createDB("MeowDB")
+            //client.selectDB("MeowDB")
+            //client.selectTable("MeowTable", Thing::name, Thing.serializer(), )
+            /*
+            client.createTable("MeowTable", )
+            client.(Thing::name.name, "MeowTable", true)
             client.sendInsertRow("MeowTable", Json.encodeToString(Thing.serializer(), Thing("Mr.Midnight", "Cool")))
 
+            client
             println(client.sendSelectByKey("MeowTable", "Mr.Midnight").row.toString())
 
             client.sendUpdateRows("MeowTable", Thing::personality.name, "\"Moody\"", Database.Filter("name", CapnProto.Check.EQUAL, JsonPrimitive("Mr.Midnight")), 1)
 
             println(client.sendSelectByKey("MeowTable", "Mr.Midnight").row.toString())
             //println(client.readNovaeMessage().which())
+            */
             delay(10000)
         }
 
