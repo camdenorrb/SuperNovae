@@ -10,6 +10,7 @@ import java.nio.ByteBuffer
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
+import java.util.*
 
 suspend fun Client.sendNovaeMessage(message: MessageBuilder) {
 
@@ -20,48 +21,31 @@ suspend fun Client.sendNovaeMessage(message: MessageBuilder) {
             message
         )
     }*/
-
-    Files.newByteChannel(Paths.get("output2.bin"), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE).use { outputChannel ->
+    Files.createDirectories(Paths.get("KatData"))
+    val bp = Paths.get("KatData", "output2.bin" + UUID.randomUUID());
+    Files.newByteChannel(bp, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE).use { outputChannel ->
         org.capnproto.SerializePacked.writeToUnbuffered(
             outputChannel,
             message
         )
     }
 
-    val bytes = Files.readAllBytes(Paths.get("output2.bin"))
+    val bytes = Files.readAllBytes(bp)
     //val output1Size = Files.size(Paths.get("output1.bin"))
     queueAndFlush(Packet().int(bytes.size).bytes(bytes))
     //ClientCapnProto.pushPacked(this, message)
 }
 
 suspend fun Client.readNovaeMessage(): CapnProto.Message.Reader {
-
+    Files.createDirectories(Paths.get("KatData"))
     val bytes = suspendReadBytes(suspendReadInt())
-
-    val weirdByteBufferBufferedInputStream = object : org.capnproto.BufferedInputStream {
-
-        override fun close() {
-            //TODO("not implemented")
-        }
-
-        override fun isOpen(): Boolean {
-            //TODO("not implemented")
-            return true
-        }
-
-        override fun read(dst: ByteBuffer): Int {
-            dst.put(bytes)
-            return bytes.size
-        }
-
-        override fun getReadBuffer(): ByteBuffer {
-            return ByteBuffer.wrap(bytes)
-        }
-
+    val bp = Paths.get("KatData", "input2.bin" + UUID.randomUUID());
+    Files.newByteChannel(bp, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE).use { outputChannel ->
+        outputChannel.write(ByteBuffer.wrap(bytes))
     }
-    weirdByteBufferBufferedInputStream.use { inputStream ->
+    Files.newByteChannel(bp, StandardOpenOption.READ).use { inputStream ->
 
-        val message = SerializePacked.read(
+        val message = SerializePacked.readFromUnbuffered(
             inputStream,
         )
 
