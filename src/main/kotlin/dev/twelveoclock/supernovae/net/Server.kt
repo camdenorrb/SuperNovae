@@ -1,6 +1,7 @@
 package dev.twelveoclock.supernovae.net
 
 import dev.twelveoclock.supernovae.api.Database
+import dev.twelveoclock.supernovae.ext.build
 import dev.twelveoclock.supernovae.ext.filter
 import dev.twelveoclock.supernovae.ext.readNovaeMessage
 import dev.twelveoclock.supernovae.ext.sendNovaeMessage
@@ -10,7 +11,6 @@ import kotlinx.serialization.json.JsonObject
 import me.camdenorrb.netlius.Netlius
 import me.camdenorrb.netlius.net.Client
 import me.camdenorrb.netlius.net.Packet
-import org.capnproto.MessageBuilder
 import java.io.File
 
 //import me.camdenorrb.netlius.net.Client as NetClient
@@ -100,7 +100,7 @@ class Server(
 
     private fun Client.createDB(message: CapnProto.CreateDB.Reader) {
         val database = Database(File(serverFolder, message.databaseName.toString()))
-        databases[message.databaseName.toString().toLowerCase()] = database
+        databases[message.databaseName.toString()] = database
     }
 
     private fun Client.createTable(message: CapnProto.CreateTable.Reader) {
@@ -123,11 +123,11 @@ class Server(
             println("[I] selectDB(${message.databaseName})")
         }
 
-        selectedDatabase[this] = databases.getValue(message.databaseName.toString().toLowerCase())
+        selectedDatabase[this] = databases.getValue(message.databaseName.toString())
     }
 
     private fun Client.deleteDB(message: CapnProto.DeleteDB.Reader) {
-        databases.remove(message.databaseName.toString().toLowerCase())
+        databases.remove(message.databaseName.toString())
         //selectedDatabase[this] = databases.getValue(message.databaseName.toString().toLowerCase())
     }
 
@@ -145,9 +145,15 @@ class Server(
             "The selected table ${message.tableName} does not exist."
         }
 
-        TODO("Select Table response")
-        //sendNovaeMessage(table.message.tableName.toString())
-        //selectedDatabase[this] = databases.getValue(message.databaseName.toString().toLowerCase())
+        val responseMessage = CapnProto.Message.factory.build { builder ->
+            builder.initSelectTableResponse().apply {
+                setTableName(table.name)
+                setKeyColumn(table.keyColumn)
+                shouldCacheAll = table.shouldCacheAll
+            }
+        }
+
+        sendNovaeMessage(responseMessage)
     }
 
     private fun Client.deleteRows(message: CapnProto.DeleteRows.Reader) {
@@ -156,7 +162,7 @@ class Server(
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString().toLowerCase()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
             "Unable to find table '${message.tableName}'."
         }
 
@@ -172,15 +178,13 @@ class Server(
         }
     }
 
-
-
     private suspend fun Client.selectRows(message: CapnProto.SelectRows.Reader) {
 
         val selectedDatabase = checkNotNull(selectedDatabase[this]) {
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString().toLowerCase()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
             "Unable to find table '${message.tableName}'."
         }
 
@@ -193,13 +197,15 @@ class Server(
 
         queueAndFlush(Packet().int(selectedRows?.size ?: 0))
 
-        selectedRows?.forEach {
+        selectedRows?.forEach { row ->
 
-            val builder = MessageBuilder()
-            val selectResponse = builder.initRoot(CapnProto.SelectRowResponse.factory)
+            val responseMessage = CapnProto.Message.factory.build { builder ->
+                builder.initSelectRowResponse().apply {
+                    setRow(row.toString())
+                }
+            }
 
-            selectResponse.setRow(it.toString())
-            sendNovaeMessage(builder)
+            sendNovaeMessage(responseMessage)
         }
     }
 
@@ -209,7 +215,7 @@ class Server(
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString().toLowerCase()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
             "Unable to find table '${message.tableName}'."
         }
 
@@ -225,7 +231,7 @@ class Server(
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString().toLowerCase()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
             "Unable to find table '${message.tableName}'."
         }
 
@@ -245,7 +251,7 @@ class Server(
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString().toLowerCase()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
             "Unable to find table '${message.tableName}'."
         }
 
@@ -258,7 +264,7 @@ class Server(
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString().toLowerCase()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
             "Unable to find table '${message.tableName}'."
         }
 
@@ -272,7 +278,7 @@ class Server(
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString().toLowerCase()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
             "Unable to find table '${message.tableName}'."
         }
 
@@ -285,7 +291,7 @@ class Server(
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString().toLowerCase()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
             "Unable to find table '${message.tableName}'."
         }
 

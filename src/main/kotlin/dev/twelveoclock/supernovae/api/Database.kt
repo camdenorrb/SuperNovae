@@ -2,9 +2,12 @@ package dev.twelveoclock.supernovae.api
 
 import dev.twelveoclock.supernovae.ext.invoke
 import dev.twelveoclock.supernovae.proto.CapnProto
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.*
 import org.capnproto.MessageBuilder
 import java.io.File
+import kotlin.reflect.KProperty1
 
 // This is gonna be local only, expand upon in Server
 data class Database(val folder: File) {
@@ -20,12 +23,12 @@ data class Database(val folder: File) {
 
     fun createTable(name: String, shouldCacheAll: Boolean, keyColumn: String): Table {
         return Table(name, shouldCacheAll, keyColumn, File(folder, name)).also {
-            tables[name.toLowerCase()] = it
+            tables[name] = it
         }
     }
 
     fun deleteTable(name: String) {
-        tables.remove(name.toLowerCase())
+        tables.remove(name)
     }
 
     // TODO: Make a cache on connect, and update through change listeners - Nvm, this is gonna be only local
@@ -226,8 +229,40 @@ data class Database(val folder: File) {
             }.asReader()
         }
 
-
         companion object {
+
+            // Equals
+            fun <T, R> eq(serializer: KSerializer<R>, property: KProperty1<T, R>, value: R): Filter {
+                return Filter(property.name, CapnProto.Check.EQUAL, Json.encodeToJsonElement(serializer, value))
+            }
+
+            // Equals
+            fun <T> eq(property: KProperty1<T, String>, value: String): Filter {
+                return Filter(property.name, CapnProto.Check.EQUAL, Json.encodeToJsonElement(String.serializer(), value))
+            }
+
+
+            // Lesser than
+            fun <T, R> lt(serializer: KSerializer<R>, property: KProperty1<T, R>, value: R): Filter {
+                return Filter(property.name, CapnProto.Check.LESSER_THAN, Json.encodeToJsonElement(serializer, value))
+            }
+
+            // Greater than
+            fun <T, R> gt(serializer: KSerializer<R>, property: KProperty1<T, R>, value: R): Filter {
+                return Filter(property.name, CapnProto.Check.GREATER_THAN, Json.encodeToJsonElement(serializer, value))
+            }
+
+
+            // Lesser than or equals
+            fun <T, R> lte(serializer: KSerializer<R>, property: KProperty1<T, R>, value: R): Filter {
+                return Filter(property.name, CapnProto.Check.LESSER_THAN_OR_EQUAL, Json.encodeToJsonElement(serializer, value))
+            }
+
+            // Greater than or equals
+            fun <T, R> gte(serializer: KSerializer<R>, property: KProperty1<T, R>, value: R): Filter {
+                return Filter(property.name, CapnProto.Check.GREATER_THAN_OR_EQUAL, Json.encodeToJsonElement(serializer, value))
+            }
+
 
             fun fromCapnProtoReader(filter: CapnProto.Filter.Reader): Filter {
 

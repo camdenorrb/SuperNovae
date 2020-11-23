@@ -1,0 +1,13 @@
+Remove the low level and just focus on high level
+
+Make a graphql like thingy for select responses to reduce message size
+
+Figure out why packed doesn't work
+
+Add scalability and make it like cockroachdb redundancy wise
+
+Add SQL compiler
+
+Maybe add optional responses
+
+Simplify the high level setup

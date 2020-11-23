@@ -84,7 +84,7 @@ struct SelectRowResponse @0x97678ad2cfb46cb0 {
 }
 
 struct SelectTableResponse @0x9e0fc6cba7b04f47 {
-tableName @0 :Text;
+    tableName @0 :Text;
     keyColumn @1 :Text;
     shouldCacheAll @2 :Bool;
 }

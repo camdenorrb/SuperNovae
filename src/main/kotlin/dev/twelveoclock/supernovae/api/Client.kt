@@ -100,6 +100,31 @@ class Client(val ip: String, val port: Int) {
         }
 
 
+        suspend fun selectRow(key: MV, onlyCheckCache: Boolean = shouldCacheAll, loadIntoCache: Boolean = false): R? {
+
+            val filters = listOf(
+                Database.Filter(mainKey.name, CapnProto.Check.EQUAL, Json.encodeToJsonElement(keySerializer, key))
+            )
+
+            client.sendSelectRows(filters, name, onlyCheckCache, loadIntoCache, 1)
+
+            check(client.suspendReadInt() <= 1) {
+                "Expected: returnedRows.size <= 1"
+            }
+
+            return Json.decodeFromString(rowSerializer, client.readNovaeMessage().selectRowResponse.row.toString())
+        }
+
+        suspend fun selectRows(filters: List<Database.Filter>, onlyCheckCache: Boolean = shouldCacheAll, loadIntoCache: Boolean = false): List<R> {
+
+            val rows = client.sendSelectRows(filters, name, onlyCheckCache, loadIntoCache, 1)
+
+            return rows.map {
+                Json.decodeFromString(rowSerializer, it.row.toString())
+            }
+        }
+
+
         suspend fun insertRow(row: R, shouldCache: Boolean = shouldCacheAll) {
             val rowAsString = Json.encodeToString(rowSerializer, row)
             client.sendInsertRow(name, rowAsString, shouldCache)
@@ -123,6 +148,7 @@ class Client(val ip: String, val port: Int) {
                 onlyCheckCache
             )
         }
+
 
     }
 
