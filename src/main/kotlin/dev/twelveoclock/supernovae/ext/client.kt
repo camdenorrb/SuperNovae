@@ -2,12 +2,12 @@ package dev.twelveoclock.supernovae.ext
 
 import dev.twelveoclock.supernovae.api.Database
 import dev.twelveoclock.supernovae.async.ClientCapnProto
-import dev.twelveoclock.supernovae.proto.CapnProto
+import dev.twelveoclock.supernovae.proto.DBProto
 import me.camdenorrb.netlius.net.Client
 import org.capnproto.MessageBuilder
 import org.capnproto.ReaderOptions
 
-suspend fun Client.sendNovaeMessage(message: MessageBuilder) {
+suspend fun Client.suspendSendNovaeMessage(message: MessageBuilder) {
 
     /*
     Files.newByteChannel(Paths.get("output1.bin"), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE).use { outputChannel ->
@@ -33,7 +33,7 @@ suspend fun Client.sendNovaeMessage(message: MessageBuilder) {
     ClientCapnProto.push(this, message)
 }
 
-suspend fun Client.readNovaeMessage(): CapnProto.Message.Reader {
+suspend fun Client.suspendReadNovaeMessage(): DBProto.Message.Reader {
 
     /*
     Files.createDirectories(Paths.get("KatData"))
@@ -54,24 +54,24 @@ suspend fun Client.readNovaeMessage(): CapnProto.Message.Reader {
 
 
     return ClientCapnProto.pull(this, ReaderOptions.DEFAULT_READER_OPTIONS)
-        .getRoot(CapnProto.Message.factory)
+        .getRoot(DBProto.Message.factory)
 
 }
 
 suspend fun Client.sendCreateDB(dbName: String) {
 
-    val message = CapnProto.Message.factory.build { builder ->
+    val message = DBProto.Message.factory.build { builder ->
         builder.initCreateDb().apply {
             setDatabaseName(dbName)
         }
     }
 
-    sendNovaeMessage(message)
+    suspendSendNovaeMessage(message)
 }
 
 suspend fun Client.sendCreateTable(tableName: String, keyColumn: String, shouldCacheAll: Boolean = false) {
 
-    val message = CapnProto.Message.factory.build { builder ->
+    val message = DBProto.Message.factory.build { builder ->
         builder.initCreateTable().apply {
             setKeyColumn(keyColumn)
             setTableName(tableName)
@@ -79,40 +79,40 @@ suspend fun Client.sendCreateTable(tableName: String, keyColumn: String, shouldC
         }
     }
 
-    sendNovaeMessage(message)
+    suspendSendNovaeMessage(message)
 }
 
 suspend fun Client.sendDeleteDB(dbName: String) {
 
-    val message = CapnProto.Message.factory.build { builder ->
+    val message = DBProto.Message.factory.build { builder ->
         builder.initDeleteDb().apply {
             setDatabaseName(dbName)
         }
     }
 
-    sendNovaeMessage(message)
+    suspendSendNovaeMessage(message)
 }
 
 suspend fun Client.sendSelectDB(dbName: String) {
 
-    val message = CapnProto.Message.factory.build { builder ->
+    val message = DBProto.Message.factory.build { builder ->
         builder.initSelectDb().apply {
             setDatabaseName(dbName)
         }
     }
 
-    sendNovaeMessage(message)
+    suspendSendNovaeMessage(message)
 }
 
-suspend fun Client.sendSelectRows(filters: List<Database.Filter>, tableName: String, onlyCheckCache: Boolean = false, loadIntoCache: Boolean = false, amountOfRows: Int = 0): List<CapnProto.SelectRowResponse.Reader> {
+suspend fun Client.sendSelectRows(filters: List<Database.Filter>, tableName: String, onlyCheckCache: Boolean = false, loadIntoCache: Boolean = false, amountOfRows: Int = 0) {
 
-    val message = CapnProto.Message.factory.build { builder ->
+    val message = DBProto.Message.factory.build { builder ->
         builder.initSelectRows().apply {
 
             val filterStructList = initFilters(filters.size)
 
             filters.forEachIndexed { index, filter ->
-                filterStructList.setWithCaveats(CapnProto.Filter.factory, index, filter.toCapnProtoReader())
+                filterStructList.setWithCaveats(DBProto.Filter.factory, index, filter.toCapnProtoReader())
             }
 
             setTableName(tableName)
@@ -122,22 +122,18 @@ suspend fun Client.sendSelectRows(filters: List<Database.Filter>, tableName: Str
         }
     }
 
-    sendNovaeMessage(message)
-
-    return (1..suspendReadInt()).map {
-        readNovaeMessage().selectRowResponse
-    }
+    suspendSendNovaeMessage(message)
 }
 
 suspend fun Client.sendDeleteRow(tableName: String, amountOfRows: Int = 0) {
 
-    val message = CapnProto.Message.factory.build { builder ->
+    val message = DBProto.Message.factory.build { builder ->
         builder.initDeleteRows().apply {
 
             val filterStructList = initFilters(filters.size())
 
             filters.forEachIndexed { index, filter ->
-                filterStructList.setWithCaveats(CapnProto.Filter.factory, index, filter.asReader())
+                filterStructList.setWithCaveats(DBProto.Filter.factory, index, filter.asReader())
             }
 
             setTableName(tableName)
@@ -145,25 +141,25 @@ suspend fun Client.sendDeleteRow(tableName: String, amountOfRows: Int = 0) {
         }
     }
 
-    sendNovaeMessage(message)
+    suspendSendNovaeMessage(message)
 }
 
 suspend fun Client.sendInsertRow(tableName: String, row: String, shouldCache: Boolean = false) {
 
-    val message = CapnProto.Message.factory.build { builder ->
+    val message = DBProto.Message.factory.build { builder ->
         builder.initInsertRow().apply {
             setTableName(tableName)
             setRow(row)
             setShouldCache(shouldCache)
-        }.asReader()
+        }
     }
 
-    sendNovaeMessage(message)
+    suspendSendNovaeMessage(message)
 }
 
 suspend fun Client.sendUpdateRows(tableName: String, columnName: String, value: String, filter: Database.Filter, amountOfRows: Int, onlyCheckCache: Boolean = false) {
 
-    val message = CapnProto.Message.factory.build { builder ->
+    val message = DBProto.Message.factory.build { builder ->
         builder.initUpdateRows().apply {
             setTableName(tableName)
             setColumnName(columnName)
@@ -171,67 +167,88 @@ suspend fun Client.sendUpdateRows(tableName: String, columnName: String, value: 
             setFilter(filter.toCapnProtoReader())
             setAmountOfRows(amountOfRows)
             setOnlyCheckCache(onlyCheckCache)
-        }.asReader()
+        }
     }
 
-    sendNovaeMessage(message)
+    suspendSendNovaeMessage(message)
 }
 
 suspend fun Client.sendCacheRows(tableName: String, filter: Database.Filter, onlyCheckCache: Boolean) {
 
-    val message = CapnProto.Message.factory.build { builder ->
+    val message = DBProto.Message.factory.build { builder ->
         builder.initCacheRows().apply {
             setTableName(tableName)
             setFilter(filter.toCapnProtoReader())
             setOnlyCheckCache(onlyCheckCache)
-        }.asReader()
+        }
     }
 
-    sendNovaeMessage(message)
+    suspendSendNovaeMessage(message)
 }
 
 suspend fun Client.sendCacheTable(tableName: String) {
 
-    val message = CapnProto.Message.factory.build { builder ->
+    val message = DBProto.Message.factory.build { builder ->
         builder.initCacheTable().apply {
             setTableName(tableName)
-        }.asReader()
+        }
     }
 
-    sendNovaeMessage(message)
+    suspendSendNovaeMessage(message)
 }
 
-suspend fun Client.sendSelectTable(tableName: String): CapnProto.SelectTableResponse.Reader {
+suspend fun Client.sendSelectTable(tableName: String) {
 
-    val message = CapnProto.Message.factory.build { builder ->
+    val message = DBProto.Message.factory.build { builder ->
         builder.initSelectTable().apply {
             setTableName(tableName)
-        }.asReader()
+        }
     }
 
-    sendNovaeMessage(message)
-
-    return readNovaeMessage().selectTableResponse
+    suspendSendNovaeMessage(message)
 }
 
 suspend fun Client.sendUnloadTable(tableName: String) {
 
-    val message = CapnProto.Message.factory.build { builder ->
+    val message = DBProto.Message.factory.build { builder ->
         builder.initUncacheTable().apply {
             setTableName(tableName)
-        }.asReader()
+        }
     }
 
-    sendNovaeMessage(message)
+    suspendSendNovaeMessage(message)
 }
 
 suspend fun Client.sendDeleteTable(tableName: String) {
 
-    val message = CapnProto.Message.factory.build { builder ->
+    val message = DBProto.Message.factory.build { builder ->
         builder.initDeleteTable().apply {
             setTableName(tableName)
-        }.asReader()
+        }
     }
 
-    sendNovaeMessage(message)
+    suspendSendNovaeMessage(message)
+}
+
+suspend fun Client.sendClearTable(tableName: String) {
+
+    val message = DBProto.Message.factory.build { builder ->
+        builder.initClearTable().apply {
+            setTableName(tableName)
+        }
+    }
+
+    suspendSendNovaeMessage(message)
+}
+
+
+suspend fun Client.sendListenToTable(tableName: String) {
+
+    val message = DBProto.Message.factory.build { builder ->
+        builder.initListenToChanges().apply {
+            setTableName(tableName)
+        }
+    }
+
+    suspendSendNovaeMessage(message)
 }

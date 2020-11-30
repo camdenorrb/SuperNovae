@@ -1,11 +1,11 @@
 package me.camdenorrb.supernovae
 
 import dev.twelveoclock.supernovae.SuperNovae
-import dev.twelveoclock.supernovae.api.Client
 import dev.twelveoclock.supernovae.api.Database
 import dev.twelveoclock.supernovae.async.ClientCapnProto
 import dev.twelveoclock.supernovae.ext.*
-import dev.twelveoclock.supernovae.proto.CapnProto
+import dev.twelveoclock.supernovae.net.DBClient
+import dev.twelveoclock.supernovae.proto.DBProto
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
@@ -44,10 +44,10 @@ class ServerTest {
             val thing = Thing("Mr.Midnight", "Cool")
             println(Json.encodeToString(Thing.serializer(), thing))
             client.sendInsertRow("MeowTable", Json.encodeToString(Thing.serializer(), thing))
-            val rows = client.sendSelectRows(listOf(Database.Filter("name", CapnProto.Check.EQUAL, JsonPrimitive("Mr.Midnight"))), "MeowTable")
+            client.sendSelectRows(listOf(Database.Filter("name", DBProto.Check.EQUAL, JsonPrimitive("Mr.Midnight"))), "MeowTable")
 
-            rows.forEach {
-                println(it.row.toString())
+            client.suspendReadNovaeMessage().blob.list.forEach {
+                println(it.selectRowResponse.row.toString())
             }
 
             delay(10000)
@@ -64,10 +64,10 @@ class ServerTest {
 
         runBlocking {
 
-            val client = Client("127.0.0.1", 12345).apply { connect() } //Client("127.0.0.1", 12345)
+            val client = DBClient("127.0.0.1", 12345).apply { connect() } //Client("127.0.0.1", 12345)
             //val client = Netlius.client("127.0.0.1", 12345)
 
-            client.createDB("MeowDB")
+            //client.createDB("MeowDB")
             client.selectDB("MeowDB")
             client.createTable("MeowTable", Thing::name.name, true)
 

@@ -1,7 +1,8 @@
 package dev.twelveoclock.supernovae.api
 
+import dev.twelveoclock.supernovae.config.TableConfig
 import dev.twelveoclock.supernovae.ext.invoke
-import dev.twelveoclock.supernovae.proto.CapnProto
+import dev.twelveoclock.supernovae.proto.DBProto
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.*
@@ -17,7 +18,12 @@ data class Database(val folder: File) {
 
 
     init {
+
         folder.mkdirs()
+
+        folder.listFiles()?.filter { it.isDirectory }?.forEach {
+            Table.loadFromFolder(it)
+        }
     }
 
 
@@ -31,6 +37,8 @@ data class Database(val folder: File) {
         tables.remove(name)
     }
 
+
+
     // TODO: Make a cache on connect, and update through change listeners - Nvm, this is gonna be only local
 
     class Table(
@@ -40,6 +48,7 @@ data class Database(val folder: File) {
         val folder: File,
     ) {
 
+        // TODO: On set save settings
         var shouldCacheAll = shouldCacheAll
             private set
 
@@ -54,6 +63,8 @@ data class Database(val folder: File) {
             if (shouldCacheAll) {
                 cacheAllRows()
             }
+
+            File(folder, "settings.json").writeText(Json.encodeToString(TableConfig.serializer(), TableConfig(keyColumn, shouldCacheAll)))
         }
 
 
@@ -75,14 +86,17 @@ data class Database(val folder: File) {
             }
         }
 
-        // Might not be possible?
         fun update(filter: Filter, columnName: String, value: String, amount: Int? = null, onlyCheckCache: Boolean) {
+            update(filter(filter, amount, onlyCheckCache), columnName, value)
+        }
+
+        fun update(values: List<JsonObject>, columnName: String, value: String) {
 
             check(columnName != keyColumn) {
                 "You currently cannot change the key column value"
             }
 
-            filter(filter, amount, onlyCheckCache).forEach {
+            values.forEach {
 
                 val shouldCache = cachedRows.containsKey(it.getValue(keyColumn).toString().toLowerCase())
                 val objectAsMap = it.toMutableMap()
@@ -101,6 +115,7 @@ data class Database(val folder: File) {
                 insert(JsonObject(objectAsMap), shouldCache)
             }
         }
+
 
         fun uncache(filter: Filter) {
 
@@ -136,6 +151,15 @@ data class Database(val folder: File) {
             }
         }
 
+        fun clear() {
+
+            folder.listFiles()?.forEach {
+                it.delete()
+            }
+
+            cachedRows.clear()
+        }
+
         // TODO: Add a way to specify amount to filter for optimization
         // TODO: Check if keyColumn is the only thing being filtered and do an optimized search if so
         fun filter(filter: Filter, amount: Int? = null, onlyCheckCache: Boolean = false): List<JsonObject> {
@@ -154,6 +178,10 @@ data class Database(val folder: File) {
                 filter.check(it.getValue(filter.columnName), filter.value)
             }
 
+            if (amount != null && result.size >= amount) {
+                return result.take(amount)
+            }
+
             // Check all persistent rows
             result += folder.listFiles()!!
                 .filter {
@@ -167,36 +195,41 @@ data class Database(val folder: File) {
                     filter.check(it.getValue(filter.columnName), filter.value)
                 }
 
-            return result
+            return if (amount != null) {
+                result.take(amount)
+            }
+            else {
+                result
+            }
         }
 
 
-        fun uncacheAllRows() {
+        internal fun uncacheAllRows() {
 
             if (!shouldCacheAll) {
                 return
             }
 
+            cachedRows.clear()
+
             shouldCacheAll = false
         }
 
-        fun cacheAllRows() {
-
-            if (shouldCacheAll) {
-                return
-            }
-
+        internal fun cacheAllRows() {
             folder.listFiles()?.forEach {
                 JSON.parseToJsonElement(it.readText())
             }
-
-            shouldCacheAll = true
         }
 
 
         companion object {
 
             const val FILE_EXTENSION = ".json"
+
+            internal fun loadFromFolder(folder: File): Table {
+                val settings = Json.decodeFromString(TableConfig.serializer(), File(folder, "settings.json").readText())
+                return Table(folder.name, settings.shouldCacheAll, settings.keyColumnName, folder)
+            }
 
         }
 
@@ -206,23 +239,16 @@ data class Database(val folder: File) {
 
         val JSON = Json { prettyPrint = true }
 
-        fun loadFromFolder() {
-
-        }
-
     }
 
     data class Filter(
         val columnName: String,
-        val check: CapnProto.Check,
+        val check: DBProto.Check,
         val value: JsonElement
     ) {
 
-        fun toCapnProtoReader(): CapnProto.Filter.Reader {
-
-            val builder = MessageBuilder()
-
-            return builder.initRoot(CapnProto.Filter.factory).also {
+        fun toCapnProtoReader(): DBProto.Filter.Reader {
+            return MessageBuilder().initRoot(DBProto.Filter.factory).also {
                 it.setColumnName(columnName)
                 it.check = check
                 it.setCompareToValue(value.toString())
@@ -233,38 +259,38 @@ data class Database(val folder: File) {
 
             // Equals
             fun <T, R> eq(serializer: KSerializer<R>, property: KProperty1<T, R>, value: R): Filter {
-                return Filter(property.name, CapnProto.Check.EQUAL, Json.encodeToJsonElement(serializer, value))
+                return Filter(property.name, DBProto.Check.EQUAL, Json.encodeToJsonElement(serializer, value))
             }
 
             // Equals
             fun <T> eq(property: KProperty1<T, String>, value: String): Filter {
-                return Filter(property.name, CapnProto.Check.EQUAL, Json.encodeToJsonElement(String.serializer(), value))
+                return Filter(property.name, DBProto.Check.EQUAL, Json.encodeToJsonElement(String.serializer(), value))
             }
 
 
             // Lesser than
             fun <T, R> lt(serializer: KSerializer<R>, property: KProperty1<T, R>, value: R): Filter {
-                return Filter(property.name, CapnProto.Check.LESSER_THAN, Json.encodeToJsonElement(serializer, value))
+                return Filter(property.name, DBProto.Check.LESSER_THAN, Json.encodeToJsonElement(serializer, value))
             }
 
             // Greater than
             fun <T, R> gt(serializer: KSerializer<R>, property: KProperty1<T, R>, value: R): Filter {
-                return Filter(property.name, CapnProto.Check.GREATER_THAN, Json.encodeToJsonElement(serializer, value))
+                return Filter(property.name, DBProto.Check.GREATER_THAN, Json.encodeToJsonElement(serializer, value))
             }
 
 
             // Lesser than or equals
             fun <T, R> lte(serializer: KSerializer<R>, property: KProperty1<T, R>, value: R): Filter {
-                return Filter(property.name, CapnProto.Check.LESSER_THAN_OR_EQUAL, Json.encodeToJsonElement(serializer, value))
+                return Filter(property.name, DBProto.Check.LESSER_THAN_OR_EQUAL, Json.encodeToJsonElement(serializer, value))
             }
 
             // Greater than or equals
             fun <T, R> gte(serializer: KSerializer<R>, property: KProperty1<T, R>, value: R): Filter {
-                return Filter(property.name, CapnProto.Check.GREATER_THAN_OR_EQUAL, Json.encodeToJsonElement(serializer, value))
+                return Filter(property.name, DBProto.Check.GREATER_THAN_OR_EQUAL, Json.encodeToJsonElement(serializer, value))
             }
 
 
-            fun fromCapnProtoReader(filter: CapnProto.Filter.Reader): Filter {
+            fun fromCapnProtoReader(filter: DBProto.Filter.Reader): Filter {
 
                 val columnName = filter.columnName.toString()
                 val compareToValue = JSON.parseToJsonElement(filter.compareToValue.toString())
