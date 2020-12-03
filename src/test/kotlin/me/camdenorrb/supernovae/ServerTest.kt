@@ -69,14 +69,26 @@ class ServerTest {
 
             //client.createDB("MeowDB")
             client.selectDB("MeowDB")
-            client.createTable("MeowTable", Thing::name.name, true)
+            //client.createTable("MeowTable", Thing::name.name, true)
 
             val table = client.selectTable("MeowTable", Thing::name, Thing.serializer(), String.serializer())
-            table.insertRow(Thing("Mr.Midnight", "Cat"))
+            //table.insertRow(Thing("Mr.Midnight", "Cat"))
 
-            val rows = table.selectRows(listOf(Database.Filter.eq(Thing::name, "Mr.Midnight")))
+            table.listenToUpdates {
+                println("Updated: $it")
+            }
 
-            rows.forEach {
+            val rows1 = table.selectRows(listOf(Database.Filter.eq(Thing::name, "Mr.Midnight")))
+
+            rows1.forEach {
+                println(it)
+            }
+
+            table.updateRow("Mr.Midnight", Thing::personality, "Dog", String.serializer())
+
+            val rows2 = table.selectRows(listOf(Database.Filter.eq(Thing::name, "Mr.Midnight")))
+
+            rows2.forEach {
                 println(it)
             }
 

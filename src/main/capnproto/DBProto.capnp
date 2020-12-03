@@ -148,7 +148,8 @@ struct RemoveAllListenToTables @0x985a9a3fb1bbd47c {
 
 struct UpdateNotification @0xa549209cca18d206 {
     tableName @0 :Text;
-    newRow @1 :Text; # Json value
+    oldRow @1 :Text; # Json value
+    newRow @2 :Text; # Json value
 }
 
 

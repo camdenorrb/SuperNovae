@@ -49,10 +49,12 @@ class DBClient(val host: String, val port: Int) {
 
                 val message = client.suspendReadNovaeMessage()
 
-                if (message.isUpdateNotification) {
+                if (message.isBlob && message.blob.list.firstOrNull()?.isUpdateNotification == true) {
 
-                    notificationListeners[message.updateNotification.tableName.toString()]?.forEach {
-                        it(message.updateNotification)
+                    message.blob.list.map { it.updateNotification }.forEach { notification ->
+                        notificationListeners[notification.tableName.toString()]?.forEach {
+                            it(notification)
+                        }
                     }
 
                     continue
@@ -155,7 +157,7 @@ class DBClient(val host: String, val port: Int) {
             client.sendClearTable(name)
         }
 
-        fun listen(listener: (newRow: R) -> Unit) {
+        fun listenToUpdates(listener: (newRow: R) -> Unit) {
             notificationListeners.getOrPut(name, { mutableListOf() }).add {
 
                 //val oldRowValue = Json.decodeFromString(rowSerializer, it.oldRow.toString())
@@ -197,10 +199,12 @@ class DBClient(val host: String, val port: Int) {
             client.sendDeleteRow(name)
         }
 
-        suspend fun <T> updateRows(keyValue: MV, property: KProperty1<R, T>, newValue: T, serializer: KSerializer<T>, amountOfRows: Int = 0, onlyCheckCache: Boolean = shouldCacheAll) {
-
+        suspend fun <T> updateRow(keyValue: MV, property: KProperty1<R, T>, newValue: T, serializer: KSerializer<T>, onlyCheckCache: Boolean = shouldCacheAll) {
             val filter = Database.Filter(mainKey.name, DBProto.Check.EQUAL, Json.encodeToJsonElement(keySerializer, keyValue))
+            updateRows(filter, property, newValue, serializer, 1, onlyCheckCache)
+        }
 
+        suspend fun <T> updateRows(filter: Database.Filter, property: KProperty1<R, T>, newValue: T, serializer: KSerializer<T>, amountOfRows: Int = 0, onlyCheckCache: Boolean = shouldCacheAll) {
             client.sendUpdateRows(
                 name,
                 property.name,

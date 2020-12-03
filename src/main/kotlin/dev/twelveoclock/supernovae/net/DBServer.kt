@@ -258,24 +258,36 @@ class DBServer(
             message.onlyCheckCache
         )
 
+        if (rows.isEmpty()) {
+            return
+        }
+
         selectedTable.update(
             rows,
             message.columnName.toString(),
             message.value.toString(),
         )
 
+        val newRows = rows.map {
+            selectedTable.get(it.getValue(selectedTable.keyColumn))!!
+        }
+
         val notifyMessage = DBProto.Message.factory.build { builder ->
-            builder.initBlob().also {
+            builder.initBlob().also { it ->
 
                 val messages = it.initList(rows.size)
 
-                rows.forEachIndexed { index, row ->
-                    messages.setWithCaveats(DBProto.Message.factory, index, MessageBuilder().initRoot(DBProto.Message.factory).also {
-                        it.initUpdateNotification().apply {
-                            setTableName(message.tableName)
-                            setNewRow(row.toString())
-                        }
-                    }.asReader())
+                newRows.forEachIndexed { index, row ->
+                    messages.setWithCaveats(
+                        DBProto.Message.factory,
+                        index,
+                        MessageBuilder().initRoot(DBProto.Message.factory).also {
+                            it.initUpdateNotification().apply {
+                                setTableName(message.tableName)
+                                setNewRow(row.toString())
+                            }
+                        }.asReader()
+                    )
                 }
             }
         }
@@ -284,6 +296,7 @@ class DBServer(
         netServer.clients.forEach {
             it.suspendSendNovaeMessage(notifyMessage)
         }
+
     }
 
 

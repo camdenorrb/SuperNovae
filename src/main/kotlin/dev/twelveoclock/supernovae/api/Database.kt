@@ -22,7 +22,7 @@ data class Database(val folder: File) {
         folder.mkdirs()
 
         folder.listFiles()?.filter { it.isDirectory }?.forEach {
-            Table.loadFromFolder(it)
+            tables[it.name] = Table.loadFromFolder(it)
         }
     }
 
@@ -160,6 +160,11 @@ data class Database(val folder: File) {
             cachedRows.clear()
         }
 
+        fun get(key: JsonElement, onlyCheckCache: Boolean = false): JsonObject? {
+            val keyFilter = Filter(keyColumn, DBProto.Check.EQUAL, key)
+            return filter(keyFilter, 1).firstOrNull()
+        }
+
         // TODO: Add a way to specify amount to filter for optimization
         // TODO: Check if keyColumn is the only thing being filtered and do an optimized search if so
         fun filter(filter: Filter, amount: Int? = null, onlyCheckCache: Boolean = false): List<JsonObject> {
@@ -216,8 +221,8 @@ data class Database(val folder: File) {
         }
 
         internal fun cacheAllRows() {
-            folder.listFiles()?.forEach {
-                JSON.parseToJsonElement(it.readText())
+            folder.listFiles()?.filter { it.name != "settings.json" }?.forEach {
+                cachedRows[it.nameWithoutExtension] = JSON.decodeFromString(JsonObject.serializer(), it.readText()).also { println(it) }
             }
         }
 
