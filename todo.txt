@@ -11,3 +11,7 @@ Add SQL compiler
 Maybe add optional responses
 
 Simplify the high level setup
+
+Add a synced cache implementation, where you can tell it what to do if a change is received
+
+Make it so you can't use path separators in the table name and empty table/database/file names, to prevent exploits

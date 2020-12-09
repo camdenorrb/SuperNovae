@@ -4,8 +4,8 @@ import dev.twelveoclock.supernovae.config.TableConfig
 import dev.twelveoclock.supernovae.ext.invoke
 import dev.twelveoclock.supernovae.proto.DBProto
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.*
+import kotlinx.serialization.serializer
 import org.capnproto.MessageBuilder
 import java.io.File
 import kotlin.reflect.KProperty1
@@ -13,7 +13,7 @@ import kotlin.reflect.KProperty1
 // This is gonna be local only, expand upon in Server
 data class Database(val folder: File) {
 
-    // Name lowercase -> Table
+    // Name -> Table
     val tables = mutableMapOf<String, Table>()
 
 
@@ -34,7 +34,9 @@ data class Database(val folder: File) {
     }
 
     fun deleteTable(name: String) {
+        // TODO: Backup before deleting
         tables.remove(name)
+        TODO("Remove files")
     }
 
 
@@ -64,7 +66,7 @@ data class Database(val folder: File) {
                 cacheAllRows()
             }
 
-            File(folder, "settings.json").writeText(Json.encodeToString(TableConfig.serializer(), TableConfig(keyColumn, shouldCacheAll)))
+            File(folder, SETTINGS_FILE_NAME).writeText(JSON.encodeToString(TableConfig.serializer(), TableConfig(keyColumn, shouldCacheAll)))
         }
 
 
@@ -140,12 +142,14 @@ data class Database(val folder: File) {
         }
 
         fun delete(keyColumnValue: String) {
+            // TODO: Backup before deleting
             cachedRows.remove(keyColumn)
             File(folder, "$keyColumnValue$FILE_EXTENSION").delete()
         }
 
         // Do optimized search if all is cached, otherwise don't
         fun delete(filter: Filter) {
+            // TODO: Backup before deleting
             filter(filter).forEach {
                 delete(it.getValue(keyColumn).toString())
             }
@@ -153,7 +157,9 @@ data class Database(val folder: File) {
 
         fun clear() {
 
-            folder.listFiles()?.forEach {
+            // TODO: Backup before clearing
+
+            folder.listFiles()?.filter { it.name != SETTINGS_FILE_NAME }?.forEach {
                 it.delete()
             }
 
@@ -163,6 +169,29 @@ data class Database(val folder: File) {
         fun get(key: JsonElement, onlyCheckCache: Boolean = false): JsonObject? {
             val keyFilter = Filter(keyColumn, DBProto.Check.EQUAL, key)
             return filter(keyFilter, 1).firstOrNull()
+        }
+
+        fun getAllRows(onlyInCache: Boolean = false): List<JsonObject> {
+
+            if (shouldCacheAll || onlyInCache) {
+                return cachedRows.values.toList()
+            }
+
+            val result = cachedRows.values.toMutableList()
+
+            result += folder.listFiles()!!
+                .filter {
+                    // Skip rows that are cached
+                    it.nameWithoutExtension !in cachedRows
+                }
+                .filter {
+                    it.name != SETTINGS_FILE_NAME
+                }
+                .map {
+                    JSON.parseToJsonElement(it.readText()) as JsonObject
+                }
+
+            return result
         }
 
         // TODO: Add a way to specify amount to filter for optimization
@@ -193,6 +222,9 @@ data class Database(val folder: File) {
                     // Skip rows that are cached
                     it.nameWithoutExtension !in cachedRows
                 }
+                .filter {
+                    it.name != SETTINGS_FILE_NAME
+                }
                 .map {
                     JSON.parseToJsonElement(it.readText()) as JsonObject
                 }
@@ -221,7 +253,7 @@ data class Database(val folder: File) {
         }
 
         internal fun cacheAllRows() {
-            folder.listFiles()?.filter { it.name != "settings.json" }?.forEach {
+            folder.listFiles()?.filter { it.name != SETTINGS_FILE_NAME }?.forEach {
                 cachedRows[it.nameWithoutExtension] = JSON.decodeFromString(JsonObject.serializer(), it.readText()).also { println(it) }
             }
         }
@@ -231,8 +263,11 @@ data class Database(val folder: File) {
 
             const val FILE_EXTENSION = ".json"
 
+            const val SETTINGS_FILE_NAME = "settings.json"
+
+
             internal fun loadFromFolder(folder: File): Table {
-                val settings = Json.decodeFromString(TableConfig.serializer(), File(folder, "settings.json").readText())
+                val settings = JSON.decodeFromString(TableConfig.serializer(), File(folder, SETTINGS_FILE_NAME).readText())
                 return Table(folder.name, settings.shouldCacheAll, settings.keyColumnName, folder)
             }
 
@@ -242,7 +277,11 @@ data class Database(val folder: File) {
 
     companion object {
 
-        val JSON = Json { prettyPrint = true }
+        val JSON = Json {
+            prettyPrint = true
+            encodeDefaults = true
+        }
+
 
     }
 
@@ -263,35 +302,30 @@ data class Database(val folder: File) {
         companion object {
 
             // Equals
-            fun <T, R> eq(serializer: KSerializer<R>, property: KProperty1<T, R>, value: R): Filter {
-                return Filter(property.name, DBProto.Check.EQUAL, Json.encodeToJsonElement(serializer, value))
-            }
-
-            // Equals
-            fun <T> eq(property: KProperty1<T, String>, value: String): Filter {
-                return Filter(property.name, DBProto.Check.EQUAL, Json.encodeToJsonElement(String.serializer(), value))
+            inline fun <T, reified R> eq(property: KProperty1<T, R>, value: R, serializer: KSerializer<R> = serializer()): Filter {
+                return Filter(property.name, DBProto.Check.EQUAL, JSON.encodeToJsonElement(serializer, value))
             }
 
 
             // Lesser than
-            fun <T, R> lt(serializer: KSerializer<R>, property: KProperty1<T, R>, value: R): Filter {
-                return Filter(property.name, DBProto.Check.LESSER_THAN, Json.encodeToJsonElement(serializer, value))
+            inline fun <T, reified R> lt(property: KProperty1<T, R>, value: R, serializer: KSerializer<R> = serializer()): Filter {
+                return Filter(property.name, DBProto.Check.LESSER_THAN, JSON.encodeToJsonElement(serializer, value))
             }
 
             // Greater than
-            fun <T, R> gt(serializer: KSerializer<R>, property: KProperty1<T, R>, value: R): Filter {
-                return Filter(property.name, DBProto.Check.GREATER_THAN, Json.encodeToJsonElement(serializer, value))
+            inline fun <T, reified R> gt(property: KProperty1<T, R>, value: R, serializer: KSerializer<R> = serializer()): Filter {
+                return Filter(property.name, DBProto.Check.GREATER_THAN, JSON.encodeToJsonElement(serializer, value))
             }
 
 
             // Lesser than or equals
-            fun <T, R> lte(serializer: KSerializer<R>, property: KProperty1<T, R>, value: R): Filter {
-                return Filter(property.name, DBProto.Check.LESSER_THAN_OR_EQUAL, Json.encodeToJsonElement(serializer, value))
+            inline fun <T, reified R> lte(property: KProperty1<T, R>, value: R, serializer: KSerializer<R> = serializer()): Filter {
+                return Filter(property.name, DBProto.Check.LESSER_THAN_OR_EQUAL, JSON.encodeToJsonElement(serializer, value))
             }
 
             // Greater than or equals
-            fun <T, R> gte(serializer: KSerializer<R>, property: KProperty1<T, R>, value: R): Filter {
-                return Filter(property.name, DBProto.Check.GREATER_THAN_OR_EQUAL, Json.encodeToJsonElement(serializer, value))
+            inline fun <T, reified R> gte(property: KProperty1<T, R>, value: R, serializer: KSerializer<R> = serializer()): Filter {
+                return Filter(property.name, DBProto.Check.GREATER_THAN_OR_EQUAL, JSON.encodeToJsonElement(serializer, value))
             }
 
 

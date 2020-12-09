@@ -16,4 +16,6 @@ fun main(args: Array<String>) {
     SuperNovae.server(host, port, File("Data"))
 
     println("Server started $host:$port.")
+
+    // TODO: Add a method to safely turn off the server
 }

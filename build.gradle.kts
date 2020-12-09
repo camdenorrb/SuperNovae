@@ -2,16 +2,18 @@ import java.io.FileInputStream
 import java.util.*
 
 plugins {
+    application
     java
     idea
     maven
     `maven-publish`
+    id("com.github.johnrengelman.shadow") version "6.1.0"
     kotlin("jvm") version "1.4.10"
     kotlin("plugin.serialization") version "1.4.10"
 }
 
 group = "dev.twelveoclock"
-version = "1.0.0"
+version = "1.0.31"
 
 repositories {
 
@@ -26,12 +28,12 @@ repositories {
 
 dependencies {
 
-
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.capnproto:runtime:0.1.5")
-    implementation("me.camdenorrb:Netlius:1.0-SNAPSHOT")
+    implementation("me.camdenorrb:Netlius:1.0.4")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
+    implementation("me.camdenorrb:KCommons:1.2.1")
 
     testImplementation(kotlin("test-junit"))
 }
@@ -69,6 +71,10 @@ tasks {
         add("archives", sourcesJar)
         add("archives", javadocJar)
     }
+}
+
+application {
+    mainClassName = "dev.twelveoclock.supernovae.MainKt"
 }
 
 publishing {

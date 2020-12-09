@@ -103,8 +103,20 @@ suspend fun Client.sendSelectDB(dbName: String) {
 
     suspendSendNovaeMessage(message)
 }
+suspend fun Client.sendSelectAllRows(tableName: String, onlyInCache: Boolean = false) {
 
-suspend fun Client.sendSelectRows(filters: List<Database.Filter>, tableName: String, onlyCheckCache: Boolean = false, loadIntoCache: Boolean = false, amountOfRows: Int = 0) {
+    val message = DBProto.Message.factory.build { builder ->
+        builder.initSelectAllRows().apply {
+            setTableName(tableName)
+            setOnlyInCache(onlyInCache)
+        }
+    }
+
+    suspendSendNovaeMessage(message)
+}
+
+
+suspend fun Client.sendSelectRows(tableName: String, filters: List<Database.Filter>, onlyCheckCache: Boolean = false, loadIntoCache: Boolean = false, amountOfRows: Int = 0) {
 
     val message = DBProto.Message.factory.build { builder ->
         builder.initSelectRows().apply {
@@ -186,7 +198,7 @@ suspend fun Client.sendCacheRows(tableName: String, filter: Database.Filter, onl
     suspendSendNovaeMessage(message)
 }
 
-suspend fun Client.sendCacheTable(tableName: String) {
+suspend fun Client.sendLoadTable(tableName: String) {
 
     val message = DBProto.Message.factory.build { builder ->
         builder.initCacheTable().apply {
@@ -241,11 +253,21 @@ suspend fun Client.sendClearTable(tableName: String) {
     suspendSendNovaeMessage(message)
 }
 
+suspend fun Client.sendRemoveListenToTable(tableName: String) {
+
+    val message = DBProto.Message.factory.build { builder ->
+        builder.initRemoveListenToTable().apply {
+            setTableName(tableName)
+        }
+    }
+
+    suspendSendNovaeMessage(message)
+}
 
 suspend fun Client.sendListenToTable(tableName: String) {
 
     val message = DBProto.Message.factory.build { builder ->
-        builder.initListenToChanges().apply {
+        builder.initListenToTable().apply {
             setTableName(tableName)
         }
     }

@@ -1,6 +1,5 @@
-package me.camdenorrb.supernovae
+package dev.twelveoclock.supernovae
 
-import dev.twelveoclock.supernovae.SuperNovae
 import dev.twelveoclock.supernovae.api.Database
 import dev.twelveoclock.supernovae.async.ClientCapnProto
 import dev.twelveoclock.supernovae.ext.*
@@ -23,6 +22,9 @@ import kotlin.test.Test
 @Serializable
 data class Thing(val name: String, val personality: String)
 
+@Serializable
+data class Count(val id: Int, val count: Int)
+
 class ServerTest {
 
     val testingFolder = File("ServerTesting")
@@ -44,7 +46,10 @@ class ServerTest {
             val thing = Thing("Mr.Midnight", "Cool")
             println(Json.encodeToString(Thing.serializer(), thing))
             client.sendInsertRow("MeowTable", Json.encodeToString(Thing.serializer(), thing))
-            client.sendSelectRows(listOf(Database.Filter("name", DBProto.Check.EQUAL, JsonPrimitive("Mr.Midnight"))), "MeowTable")
+            client.sendSelectRows(
+                "MeowTable",
+                listOf(Database.Filter("name", DBProto.Check.EQUAL, JsonPrimitive("Mr.Midnight")))
+            )
 
             client.suspendReadNovaeMessage().blob.list.forEach {
                 println(it.selectRowResponse.row.toString())
@@ -74,8 +79,8 @@ class ServerTest {
             val table = client.selectTable("MeowTable", Thing::name, Thing.serializer(), String.serializer())
             //table.insertRow(Thing("Mr.Midnight", "Cat"))
 
-            table.listenToUpdates {
-                println("Updated: $it")
+            table.listenToUpdates { type, row ->
+                println("Updated: $row")
             }
 
             val rows1 = table.selectRows(listOf(Database.Filter.eq(Thing::name, "Mr.Midnight")))
@@ -84,6 +89,8 @@ class ServerTest {
                 println(it)
             }
 
+            //delay(30000)
+
             table.updateRow("Mr.Midnight", Thing::personality, "Dog", String.serializer())
 
             val rows2 = table.selectRows(listOf(Database.Filter.eq(Thing::name, "Mr.Midnight")))
@@ -91,6 +98,8 @@ class ServerTest {
             rows2.forEach {
                 println(it)
             }
+
+            println("Done")
 
             delay(10000)
         }
@@ -218,6 +227,8 @@ class ServerTest {
 
         error("Didn't check")
     }
+
+
 
     @Test
     fun `utf8 packing test`() {

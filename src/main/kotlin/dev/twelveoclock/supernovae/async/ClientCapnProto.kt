@@ -33,13 +33,17 @@ object ClientCapnProto {
 
         val segments = message.segmentsForOutput
 
+        val packet = Packet()
+
         // Segment count
-        client.queueAndFlush(Packet().int(segments.size))
+        packet.int(segments.size)
 
         // Segment data
         for (buffer in segments) {
-            client.queueAndFlush(Packet().int(buffer.remaining()).byteBuffer(buffer))
+            packet.int(buffer.remaining()).byteBuffer(buffer)
         }
+
+        client.queueAndFlush(packet)
     }
 
     suspend fun pullPacked(client: Client, options: ReaderOptions): MessageReader {

@@ -15,24 +15,25 @@ struct Message @0x9c63d8afbc958760 {
         deleteDb @1 :DeleteDB;
         createTable @2 :CreateTable;
         selectDb @3 :SelectDB;
-        selectRows @4 :SelectRows;
-        deleteRows @5 :DeleteRows;
-        insertRow @6 :InsertRow;
-        updateRows @7 :UpdateRows;
-        selectRowResponse @8 :SelectRowResponse;
-        selectTableResponse @9 :SelectTableResponse;
-        cacheRows @10 :CacheRows;
-        cacheTable @11 :CacheTable;
-        uncacheRows @12 :UncacheRows;
-        uncacheTable @13 :UncacheTable;
-        deleteTable @14 :DeleteTable;
-        selectTable @15 :SelectTable;
-        clearTable @16 :ClearTable;
-        listenToChanges @17 :ListenToChanges;
-        removeListenToTable @18 :RemoveListenToTable;
-        removeAllListenToTables @19 :RemoveAllListenToTables;
-        updateNotification @20 :UpdateNotification;
-        blob @21 : Blob;
+        selectAllRows @4 :SelectAllRows;
+        selectRows @5 :SelectRows;
+        deleteRows @6 :DeleteRows;
+        insertRow @7 :InsertRow;
+        updateRows @8 :UpdateRows;
+        selectRowResponse @9 :SelectRowResponse;
+        selectTableResponse @10 :SelectTableResponse;
+        cacheRows @11 :CacheRows;
+        cacheTable @12 :CacheTable;
+        uncacheRows @13 :UncacheRows;
+        uncacheTable @14 :UncacheTable;
+        deleteTable @15 :DeleteTable;
+        selectTable @16 :SelectTable;
+        clearTable @17 :ClearTable;
+        listenToTable @18 :ListenToTable;
+        removeListenToTable @19 :RemoveListenToTable;
+        removeAllListenToTables @20 :RemoveAllListenToTables;
+        updateNotification @21 :UpdateNotification;
+        blob @22 : Blob;
     }
 }
 
@@ -52,6 +53,11 @@ struct CreateTable @0xb5e29811110d0f61 {
 
 struct SelectDB @0xed4c20264edeecb5 {
     databaseName @0 :Text;
+}
+
+struct SelectAllRows @0xd7a213ee08c1ac9b {
+    tableName @0 :Text;
+    onlyInCache @1 :Bool = false;
 }
 
 struct SelectRows @0xffa903674167c9f3 {
@@ -133,7 +139,7 @@ struct ClearTable @0xbb74f5c9a2265637 {
     tableName @0 :Text;
 }
 
-struct ListenToChanges @0xd2765b6506a1cda1 {
+struct ListenToTable @0xd2765b6506a1cda1 {
     tableName @0 :Text;
 }
 
@@ -148,8 +154,8 @@ struct RemoveAllListenToTables @0x985a9a3fb1bbd47c {
 
 struct UpdateNotification @0xa549209cca18d206 {
     tableName @0 :Text;
-    oldRow @1 :Text; # Json value
-    newRow @2 :Text; # Json value
+    type @1 :UpdateType;
+    row @2 :Text; # Json value
 }
 
 
@@ -172,4 +178,10 @@ enum Check @0xd1e179ce4037146c {
     greaterThan @2;
     lesserThanOrEqual @3;
     greaterThanOrEqual @4;
+}
+
+enum UpdateType @0xc008e5c7232f6847 {
+    modification @0;
+    insert @1;
+    deletion @2;
 }
