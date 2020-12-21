@@ -11,7 +11,9 @@ import kotlinx.serialization.json.JsonObject
 import me.camdenorrb.netlius.Netlius
 import me.camdenorrb.netlius.net.Client
 import org.capnproto.MessageBuilder
+import java.io.EOFException
 import java.io.File
+import java.nio.channels.AsynchronousCloseException
 
 //import me.camdenorrb.netlius.net.Client as NetClient
 
@@ -107,8 +109,15 @@ class DBServer(
                     DBProto.Message.Which.BLOB -> error("Unexpected blob.")
                     DBProto.Message.Which._NOT_IN_SCHEMA -> error("Unknown message received.")
                 }
-            } catch (ex: Exception) {
+            }
+            catch (ex: EOFException) {
                 // Ignored
+            }
+            catch (ex: AsynchronousCloseException) {
+                // Ignored
+            }
+            catch (ex: Exception) {
+                ex.printStackTrace()
             }
 
         }
@@ -222,7 +231,7 @@ class DBServer(
             selectedTable.delete(it[selectedTable.keyColumn].toString())
         }
 
-        sendNotification(selectedDatabase, selectedTable, filteredRows, DBProto.UpdateType.MODIFICATION)
+        sendNotification(selectedDatabase, selectedTable, filteredRows, DBProto.UpdateType.DELETION)
     }
 
     private suspend fun Client.selectAllRows(message: DBProto.SelectAllRows.Reader) {
@@ -313,8 +322,16 @@ class DBServer(
         }
 
         val jsonObject = JSON.decodeFromString(JsonObject.serializer(), message.row.toString())
+
+        val updateType = if (selectedTable.get(jsonObject.getValue(selectedTable.keyColumn)) == null) {
+            DBProto.UpdateType.INSERT
+        }
+        else {
+            DBProto.UpdateType.MODIFICATION
+        }
+
         selectedTable.insert(jsonObject, message.shouldCache)
-        sendNotification(selectedDatabase, selectedTable, listOf(jsonObject), DBProto.UpdateType.INSERT)
+        sendNotification(selectedDatabase, selectedTable, listOf(jsonObject), updateType)
     }
 
     // TODO: Make responses for everything
@@ -334,7 +351,7 @@ class DBServer(
 
         val rows = selectedTable.filter(
             Database.Filter.fromCapnProtoReader(message.filter),
-            message.amountOfRows.takeIf { it != 0 },
+            message.amountOfRows,
             message.onlyCheckCache
         )
 

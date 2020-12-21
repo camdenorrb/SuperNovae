@@ -88,7 +88,7 @@ data class Database(val folder: File) {
             }
         }
 
-        fun update(filter: Filter, columnName: String, value: String, amount: Int? = null, onlyCheckCache: Boolean) {
+        fun update(filter: Filter, columnName: String, value: String, amount: Int = 0, onlyCheckCache: Boolean) {
             update(filter(filter, amount, onlyCheckCache), columnName, value)
         }
 
@@ -143,7 +143,7 @@ data class Database(val folder: File) {
 
         fun delete(keyColumnValue: String) {
             // TODO: Backup before deleting
-            cachedRows.remove(keyColumn)
+            cachedRows.remove(keyColumnValue)
             File(folder, "$keyColumnValue$FILE_EXTENSION").delete()
         }
 
@@ -196,7 +196,7 @@ data class Database(val folder: File) {
 
         // TODO: Add a way to specify amount to filter for optimization
         // TODO: Check if keyColumn is the only thing being filtered and do an optimized search if so
-        fun filter(filter: Filter, amount: Int? = null, onlyCheckCache: Boolean = false): List<JsonObject> {
+        fun filter(filter: Filter, amount: Int = 0, onlyCheckCache: Boolean = false): List<JsonObject> {
 
             // Do optimized filter
             if (shouldCacheAll || onlyCheckCache) {
@@ -212,7 +212,7 @@ data class Database(val folder: File) {
                 filter.check(it.getValue(filter.columnName), filter.value)
             }
 
-            if (amount != null && result.size >= amount) {
+            if (amount != 0 && result.size >= amount) {
                 return result.take(amount)
             }
 
@@ -232,7 +232,7 @@ data class Database(val folder: File) {
                     filter.check(it.getValue(filter.columnName), filter.value)
                 }
 
-            return if (amount != null) {
+            return if (amount != 0) {
                 result.take(amount)
             }
             else {

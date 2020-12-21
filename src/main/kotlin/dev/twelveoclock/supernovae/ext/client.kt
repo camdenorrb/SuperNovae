@@ -8,7 +8,6 @@ import org.capnproto.MessageBuilder
 import org.capnproto.ReaderOptions
 
 suspend fun Client.suspendSendNovaeMessage(message: MessageBuilder) {
-
     /*
     Files.newByteChannel(Paths.get("output1.bin"), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE).use { outputChannel ->
         org.capnproto.Serialize.write(
@@ -137,15 +136,15 @@ suspend fun Client.sendSelectRows(tableName: String, filters: List<Database.Filt
     suspendSendNovaeMessage(message)
 }
 
-suspend fun Client.sendDeleteRow(tableName: String, amountOfRows: Int = 0) {
+suspend fun Client.sendDeleteRows(tableName: String, filters: List<Database.Filter>, amountOfRows: Int = 0) {
 
     val message = DBProto.Message.factory.build { builder ->
         builder.initDeleteRows().apply {
 
-            val filterStructList = initFilters(filters.size())
+            val filterStructList = initFilters(filters.size)
 
             filters.forEachIndexed { index, filter ->
-                filterStructList.setWithCaveats(DBProto.Filter.factory, index, filter.asReader())
+                filterStructList.setWithCaveats(DBProto.Filter.factory, index, filter.toCapnProtoReader())
             }
 
             setTableName(tableName)

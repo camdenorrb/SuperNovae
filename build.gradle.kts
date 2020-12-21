@@ -13,7 +13,7 @@ plugins {
 }
 
 group = "dev.twelveoclock"
-version = "1.0.31"
+version = "1.0.41"
 
 repositories {
 

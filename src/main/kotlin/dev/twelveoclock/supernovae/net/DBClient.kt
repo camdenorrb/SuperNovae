@@ -7,6 +7,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
@@ -21,7 +23,10 @@ import kotlin.reflect.KProperty1
 // TODO: Make a high level for local as-well
 class DBClient(val host: String, val port: Int) {
 
-    val messageWaiters = mutableMapOf<DBProto.Message.Which, MutableList<Continuation<DBProto.Message.Reader>>>()
+    val waiterMutex = Mutex()
+
+    @Volatile
+    var messageWaiter: Continuation<DBProto.Message.Reader>? = null
 
     // Table name -> Listeners
     val notificationListeners = mutableMapOf<String, MutableList<(DBProto.UpdateNotification.Reader) -> Unit>>()
@@ -65,15 +70,7 @@ class DBClient(val host: String, val port: Int) {
                     continue
                 }
 
-                val waiter = checkNotNull(messageWaiters[message.which()]?.removeFirstOrNull()) {
-                    "Expected a waiter for ${message::class}"
-                }
-
-                waiter.resume(message)
-
-                if (messageWaiters[message.which()]?.isEmpty() == true) {
-                    messageWaiters.remove(message.which())
-                }
+                messageWaiter?.resume(message)
             }
         }
 
@@ -88,14 +85,18 @@ class DBClient(val host: String, val port: Int) {
 
         readTask.cancel()
         client.close()
-        messageWaiters.clear()
+        messageWaiter = null
+
+        if (waiterMutex.isLocked) {
+            waiterMutex.unlock()
+        }
 
         isConnected = false
     }
 
-    suspend fun waitForReply(type: DBProto.Message.Which): DBProto.Message.Reader {
+    suspend fun waitForReply(): DBProto.Message.Reader {
         return suspendCoroutine {
-            messageWaiters.getOrPut(type, { mutableListOf() }).add(it)
+            messageWaiter = it
         }
     }
 
@@ -106,10 +107,14 @@ class DBClient(val host: String, val port: Int) {
         keySerializer: KSerializer<MV> = serializer()
     ): Table<R, MV, MK> {
 
-        client.sendSelectTable(name)
+        waiterMutex.withLock {
 
-        val response = waitForReply(DBProto.Message.Which.SELECT_TABLE_RESPONSE).selectTableResponse
-        return Table(this, name, mainKey, response.shouldCacheAll, rowSerializer, keySerializer)
+            client.sendSelectTable(name)
+            val response = waitForReply(/*DBProto.Message.Which.SELECT_TABLE_RESPONSE*/).selectTableResponse
+
+            return Table(this, name, mainKey, response.shouldCacheAll, rowSerializer, keySerializer)
+        }
+
     }
 
     suspend fun createTable(name: String, keyColumnName: String, shouldCacheAll: Boolean = false) {
@@ -118,7 +123,9 @@ class DBClient(val host: String, val port: Int) {
             println("[C SuperNovae] createTable($name, $keyColumnName, $shouldCacheAll)")
         }
 
-        client.sendCreateTable(name, keyColumnName, shouldCacheAll)
+        waiterMutex.withLock {
+            client.sendCreateTable(name, keyColumnName, shouldCacheAll)
+        }
     }
 
     suspend fun deleteTable(name: String) {
@@ -127,7 +134,9 @@ class DBClient(val host: String, val port: Int) {
             println("[C SuperNovae] deleteTable($name)")
         }
 
-        client.sendDeleteTable(name)
+        waiterMutex.withLock {
+            client.sendDeleteTable(name)
+        }
     }
 
     suspend fun selectDB(name: String) {
@@ -136,7 +145,9 @@ class DBClient(val host: String, val port: Int) {
             println("[C SuperNovae] selectDB($name)")
         }
 
-        client.sendSelectDB(name)
+        waiterMutex.withLock {
+            client.sendSelectDB(name)
+        }
     }
 
     suspend fun createDB(name: String) {
@@ -145,7 +156,9 @@ class DBClient(val host: String, val port: Int) {
             println("[C SuperNovae] createDB($name)")
         }
 
-        client.sendCreateDB(name)
+        waiterMutex.withLock {
+            client.sendCreateDB(name)
+        }
     }
 
     suspend fun deleteDB(name: String) {
@@ -154,7 +167,9 @@ class DBClient(val host: String, val port: Int) {
             println("[C SuperNovae] deleteDB($name)")
         }
 
-        client.sendDeleteDB(name)
+        waiterMutex.withLock {
+            client.sendDeleteDB(name)
+        }
     }
 
 
@@ -174,7 +189,9 @@ class DBClient(val host: String, val port: Int) {
                 println("[C SuperNovae ($name)] load()")
             }
 
-            dbClient.client.sendLoadTable(name)
+            dbClient.waiterMutex.withLock {
+                dbClient.client.sendLoadTable(name)
+            }
         }
 
         suspend fun load(filter: Database.Filter) {
@@ -183,7 +200,9 @@ class DBClient(val host: String, val port: Int) {
                 println("[C SuperNovae ($name)] load()")
             }
 
-            dbClient.client.sendLoadTable(name)
+            dbClient.waiterMutex.withLock {
+                dbClient.client.sendLoadTable(name)
+            }
         }
 
         suspend fun unload() {
@@ -192,7 +211,9 @@ class DBClient(val host: String, val port: Int) {
                 println("[C SuperNovae ($name)] unload()")
             }
 
-            dbClient.client.sendUnloadTable(name)
+            dbClient.waiterMutex.withLock {
+                dbClient.client.sendUnloadTable(name)
+            }
         }
 
 
@@ -202,7 +223,9 @@ class DBClient(val host: String, val port: Int) {
                 println("[C SuperNovae ($name)] create()")
             }
 
-            dbClient.client.sendCreateTable(mainKeyProperty.name, name, shouldCacheAll)
+            dbClient.waiterMutex.withLock {
+                dbClient.client.sendCreateTable(mainKeyProperty.name, name, shouldCacheAll)
+            }
         }
 
         suspend fun delete() {
@@ -211,7 +234,9 @@ class DBClient(val host: String, val port: Int) {
                 println("[C SuperNovae ($name)] delete()")
             }
 
-            dbClient.client.sendDeleteTable(name)
+            dbClient.waiterMutex.withLock {
+                dbClient.client.sendDeleteTable(name)
+            }
         }
 
         suspend fun clear() {
@@ -220,7 +245,9 @@ class DBClient(val host: String, val port: Int) {
                 println("[C SuperNovae ($name)] clear()")
             }
 
-            dbClient.client.sendClearTable(name)
+            dbClient.waiterMutex.withLock {
+                dbClient.client.sendClearTable(name)
+            }
         }
 
         suspend fun listenToUpdates(listener: (type: DBProto.UpdateType, row: R) -> Unit): (DBProto.UpdateNotification.Reader) -> Unit {
@@ -237,10 +264,13 @@ class DBClient(val host: String, val port: Int) {
                 listener(it.type, newRowValue)
             }
 
-            dbClient.notificationListeners.getOrPut(name, { mutableListOf() }).add(dbListener)
+            dbClient.waiterMutex.withLock {
 
-            if (dbClient.notificationListeners.getValue(name).size == 1) {
-                dbClient.client.sendListenToTable(name)
+                dbClient.notificationListeners.getOrPut(name, { mutableListOf() }).add(dbListener)
+
+                if (dbClient.notificationListeners.getValue(name).size == 1) {
+                    dbClient.client.sendListenToTable(name)
+                }
             }
 
             return dbListener
@@ -252,10 +282,13 @@ class DBClient(val host: String, val port: Int) {
                 println("[C SuperNovae ($name)] removeListenToUpdates($listener)")
             }
 
-            dbClient.notificationListeners[name]?.remove(listener)
+            dbClient.waiterMutex.withLock {
 
-            if (dbClient.notificationListeners[name]?.isEmpty() == true) {
-                dbClient.client.sendRemoveListenToTable(name)
+                dbClient.notificationListeners[name]?.remove(listener)
+
+                if (dbClient.notificationListeners[name]?.isEmpty() == true) {
+                    dbClient.client.sendRemoveListenToTable(name)
+                }
             }
         }
 
@@ -269,12 +302,16 @@ class DBClient(val host: String, val port: Int) {
                 Database.Filter(mainKeyProperty.name, DBProto.Check.EQUAL, JSON.encodeToJsonElement(keySerializer, key))
             )
 
-            dbClient.client.sendSelectRows(name, filters, onlyCheckCache, loadIntoCache, 1)
 
-            val rowText = dbClient.waitForReply(DBProto.Message.Which.BLOB).blob.list.firstOrNull()?.selectRowResponse?.row?.toString()
-                ?: return null
+            dbClient.waiterMutex.withLock {
 
-            return JSON.decodeFromString(rowSerializer, rowText)
+                dbClient.client.sendSelectRows(name, filters, onlyCheckCache, loadIntoCache, 1)
+
+                val rowText = dbClient.waitForReply(/*DBProto.Message.Which.BLOB*/).blob.list.firstOrNull()?.selectRowResponse?.row?.toString()
+                        ?: return null
+
+                return JSON.decodeFromString(rowSerializer, rowText)
+            }
         }
 
         suspend fun selectAllRows(onlyInCache: Boolean = false): List<R> {
@@ -283,10 +320,13 @@ class DBClient(val host: String, val port: Int) {
                 println("[C SuperNovae ($name)] selectAllRows($onlyInCache)")
             }
 
-            dbClient.client.sendSelectAllRows(name, onlyInCache)
+            dbClient.waiterMutex.withLock {
 
-            return dbClient.waitForReply(DBProto.Message.Which.BLOB).blob.list.map {
-                JSON.decodeFromString(rowSerializer, it.selectRowResponse.row.toString())
+                dbClient.client.sendSelectAllRows(name, onlyInCache)
+
+                return dbClient.waitForReply(/*DBProto.Message.Which.BLOB*/).blob.list.map {
+                    JSON.decodeFromString(rowSerializer, it.selectRowResponse.row.toString())
+                }
             }
         }
 
@@ -296,11 +336,13 @@ class DBClient(val host: String, val port: Int) {
                 println("[C SuperNovae ($name)] selectRows($filters)")
             }
 
-            dbClient.client.sendSelectRows(name, filters, onlyCheckCache, loadIntoCache, amountOfRows)
+            dbClient.waiterMutex.withLock {
 
+                dbClient.client.sendSelectRows(name, filters, onlyCheckCache, loadIntoCache, amountOfRows)
 
-            return dbClient.waitForReply(DBProto.Message.Which.BLOB).blob.list.map {
-                JSON.decodeFromString(rowSerializer, it.selectRowResponse.row.toString())
+                return dbClient.waitForReply(/*DBProto.Message.Which.BLOB*/).blob.list.map {
+                    JSON.decodeFromString(rowSerializer, it.selectRowResponse.row.toString())
+                }
             }
         }
 
@@ -312,7 +354,10 @@ class DBClient(val host: String, val port: Int) {
             }
 
             val rowAsString = JSON.encodeToString(rowSerializer, row)
-            dbClient.client.sendInsertRow(name, rowAsString, shouldCache)
+
+            dbClient.waiterMutex.withLock {
+                dbClient.client.sendInsertRow(name, rowAsString, shouldCache)
+            }
         }
 
         suspend fun deleteRow(keyValue: MV) {
@@ -321,10 +366,26 @@ class DBClient(val host: String, val port: Int) {
                 println("[C SuperNovae ($name)] deleteRow($keyValue)")
             }
 
-            TODO("Implement fully")
-            //JSON.encodeToString(keySerializer, keyValue)
-            dbClient.client.sendDeleteRow(name)
+            val filters = listOf(
+                Database.Filter(mainKeyProperty.name, DBProto.Check.EQUAL, JSON.encodeToJsonElement(keySerializer, keyValue))
+            )
+
+            dbClient.waiterMutex.withLock {
+                dbClient.client.sendDeleteRows(name, filters, 1)
+            }
         }
+
+        suspend fun deleteRows(filters: List<Database.Filter>, amountOfRows: Int = 0) {
+
+            if (IS_DEBUGGING) {
+                println("[C SuperNovae ($name)] deleteRows($filters, $amountOfRows)")
+            }
+
+            dbClient.waiterMutex.withLock {
+                dbClient.client.sendDeleteRows(name, filters, amountOfRows)
+            }
+        }
+
 
         // TODO: Take a list of updates
         suspend inline fun <reified T> updateRow(row: R, newValueProperty: KProperty1<R, T>, serializer: KSerializer<T> = serializer(), onlyCheckCache: Boolean = shouldCacheAll) {
@@ -334,6 +395,8 @@ class DBClient(val host: String, val port: Int) {
             }
 
             val filter = Database.Filter(mainKeyProperty.name, DBProto.Check.EQUAL, JSON.encodeToJsonElement(keySerializer, mainKeyProperty.get(row)))
+
+            // Don't use mutex here
             updateRows(filter, newValueProperty, newValueProperty.get(row), serializer, 1, onlyCheckCache)
         }
 
@@ -344,6 +407,8 @@ class DBClient(val host: String, val port: Int) {
             }
 
             val filter = Database.Filter(mainKeyProperty.name, DBProto.Check.EQUAL, JSON.encodeToJsonElement(keySerializer, keyValue))
+
+            // Don't use mutex here
             updateRows(filter, newValueProperty, newValue, serializer, 1, onlyCheckCache)
         }
 
@@ -353,14 +418,16 @@ class DBClient(val host: String, val port: Int) {
                 println("[C SuperNovae ($name)] updateRows($filter, ${property.name}, $newValue, $serializer)")
             }
 
-            dbClient.client.sendUpdateRows(
-                name,
-                property.name,
-                JSON.encodeToString(serializer, newValue),
-                filter,
-                amountOfRows,
-                onlyCheckCache
-            )
+            dbClient.waiterMutex.withLock {
+                dbClient.client.sendUpdateRows(
+                    name,
+                    property.name,
+                    JSON.encodeToString(serializer, newValue),
+                    filter,
+                    amountOfRows,
+                    onlyCheckCache
+                )
+            }
         }
 
     }
