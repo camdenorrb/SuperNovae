@@ -117,7 +117,7 @@ struct CacheTable @0xad23a3c5ab56508e {
 struct CacheRows @0x929b0ace4e99148f {
     tableName @0 :Text;
     filter @1 :Filter;
-    onlyCheckCache @2 :Bool = false;
+    #onlyCheckCache @2 :Bool = false;
 }
 
 

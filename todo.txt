@@ -18,3 +18,4 @@ Make it so you can't use path separators in the table name and empty table/datab
 
 Maybe a delete table on stop option, which caches everything and uses no files?
 
+Move to BSON: https://github.com/jershell/kbson

@@ -1,16 +1,15 @@
 package dev.twelveoclock.supernovae.net
 
 import dev.twelveoclock.supernovae.api.Database
-import dev.twelveoclock.supernovae.ext.build
 import dev.twelveoclock.supernovae.ext.filter
 import dev.twelveoclock.supernovae.ext.suspendReadNovaeMessage
 import dev.twelveoclock.supernovae.ext.suspendSendNovaeMessage
-import dev.twelveoclock.supernovae.proto.DBProto
+import dev.twelveoclock.supernovae.protocol.ProtocolMessage
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import me.camdenorrb.netlius.Netlius
 import me.camdenorrb.netlius.net.Client
-import org.capnproto.MessageBuilder
+//import org.capnproto.MessageBuilder
 import java.io.EOFException
 import java.io.File
 import java.nio.channels.AsynchronousCloseException
@@ -83,31 +82,30 @@ class DBServer(
 
                 val message = client.suspendReadNovaeMessage()
 
-                when (message.which()!!) {
-                    DBProto.Message.Which.CREATE_DB -> client.createDB(message.createDb)
-                    DBProto.Message.Which.CREATE_TABLE -> client.createTable(message.createTable)
-                    DBProto.Message.Which.SELECT_DB -> client.selectDB(message.selectDb)
-                    DBProto.Message.Which.SELECT_TABLE -> client.selectTable(message.selectTable)
-                    DBProto.Message.Which.SELECT_ALL_ROWS -> client.selectAllRows(message.selectAllRows)
-                    DBProto.Message.Which.SELECT_ROWS -> client.selectRows(message.selectRows)
-                    DBProto.Message.Which.INSERT_ROW -> client.insertRow(message.insertRow)
-                    DBProto.Message.Which.UPDATE_ROWS -> client.updateRows(message.updateRows)
-                    DBProto.Message.Which.CACHE_ROWS -> client.cacheRows(message.cacheRows)
-                    DBProto.Message.Which.CACHE_TABLE -> client.cacheTable(message.cacheTable)
-                    DBProto.Message.Which.UNCACHE_ROWS -> client.uncacheRows(message.uncacheRows)
-                    DBProto.Message.Which.UNCACHE_TABLE -> client.uncacheTable(message.uncacheTable)
-                    DBProto.Message.Which.DELETE_DB -> client.deleteDB(message.deleteDb)
-                    DBProto.Message.Which.DELETE_ROWS -> client.deleteRows(message.deleteRows)
-                    DBProto.Message.Which.DELETE_TABLE -> client.deleteTable(message.deleteTable)
-                    DBProto.Message.Which.CLEAR_TABLE -> client.clearTable(message.clearTable)
-                    DBProto.Message.Which.LISTEN_TO_TABLE -> client.listenToTable(message.listenToTable)
-                    DBProto.Message.Which.REMOVE_LISTEN_TO_TABLE -> client.removeListenToTable(message.removeListenToTable)
-                    DBProto.Message.Which.REMOVE_ALL_LISTEN_TO_TABLES -> client.removeAllListenToTables(message.removeAllListenToTables)
-                    DBProto.Message.Which.UPDATE_NOTIFICATION -> error("Unexpected update notification.")
-                    DBProto.Message.Which.SELECT_ROW_RESPONSE -> error("Unexpected select row response.")
-                    DBProto.Message.Which.SELECT_TABLE_RESPONSE -> error("Unexpected select table response.")
-                    DBProto.Message.Which.BLOB -> error("Unexpected blob.")
-                    DBProto.Message.Which._NOT_IN_SCHEMA -> error("Unknown message received.")
+                when (message) {
+                    is ProtocolMessage.DB.Create -> client.createDB(message)
+                    is ProtocolMessage.DB.Select -> client.selectDB(message)
+                    is ProtocolMessage.DB.Delete -> client.deleteDB(message)
+                    is ProtocolMessage.Table.Create -> client.createTable(message)
+                    is ProtocolMessage.Table.Select -> client.selectTable(message)
+                    is ProtocolMessage.Table.Cache -> client.cacheTable(message)
+                    is ProtocolMessage.Table.Uncache -> client.uncacheTable(message)
+                    is ProtocolMessage.Table.Clear -> client.clearTable(message)
+                    is ProtocolMessage.Table.StartListening -> client.listenToTable(message)
+                    is ProtocolMessage.Table.StopListening -> client.removeListenToTable(message)
+                    is ProtocolMessage.Table.Delete -> client.deleteTable(message)
+                    is ProtocolMessage.Table.InsertRow -> client.insertRow(message)
+                    is ProtocolMessage.Table.CacheRows -> client.cacheRows(message)
+                    is ProtocolMessage.Table.UpdateRows -> client.updateRows(message)
+                    is ProtocolMessage.StopListeningToAllTables -> client.removeAllListenToTables(message)
+                    is ProtocolMessage.Table.UncacheRows -> client.uncacheRows(message)
+                    is ProtocolMessage.Table.SelectAllRows -> client.selectAllRows(message)
+                    is ProtocolMessage.Table.SelectRows -> client.selectRows(message)
+                    is ProtocolMessage.Table.DeleteRows -> client.deleteRows(message)
+                    is ProtocolMessage.Blob -> error("Unexpected blob.")
+                    is ProtocolMessage.Table.SelectRowResponse -> error("Unexpected select row response.")
+                    is ProtocolMessage.Table.SelectTableResponse -> error("Unexpected select table response.")
+                    is ProtocolMessage.Table.UpdateNotification -> error("Unexpected update notification.")
                 }
             }
             catch (ex: EOFException) {
@@ -131,9 +129,9 @@ class DBServer(
     }
 
 
-    private fun Client.createDB(message: DBProto.CreateDB.Reader) {
+    private fun Client.createDB(message: ProtocolMessage.DB.Create) {
 
-        val databaseName = message.databaseName.toString()
+        val databaseName = message.databaseName
 
         check(!databaseName.contains(File.separator)) {
             "Can't create a database with a name that contains a path separator character '${databaseName}'"
@@ -149,7 +147,7 @@ class DBServer(
         }
     }
 
-    private fun Client.createTable(message: DBProto.CreateTable.Reader) {
+    private fun Client.createTable(message: ProtocolMessage.Table.Create) {
 
         if (IS_DEBUGGING) {
             println("[S SuperNovae] createTable(${message.tableName}, ${message.keyColumn}, ${message.shouldCacheAll})")
@@ -159,27 +157,27 @@ class DBServer(
             "You must select a database in order to create a table."
         }
 
-        if (message.tableName.toString() !in selectedDatabase.tables) {
-            selectedDatabase.createTable(message.tableName.toString(), message.shouldCacheAll, message.keyColumn.toString())
+        if (message.tableName !in selectedDatabase.tables) {
+            selectedDatabase.createTable(message.tableName, message.shouldCacheAll, message.keyColumn)
         }
     }
 
 
-    private fun Client.selectDB(message: DBProto.SelectDB.Reader) {
+    private fun Client.selectDB(message: ProtocolMessage.DB.Select) {
 
         if (IS_DEBUGGING) {
             println("[S SuperNovae] selectDB(${message.databaseName})")
         }
 
-        selectedDatabase[this] = databases.getValue(message.databaseName.toString())
+        selectedDatabase[this] = databases.getValue(message.databaseName)
     }
 
-    private fun Client.deleteDB(message: DBProto.DeleteDB.Reader) {
-        databases.remove(message.databaseName.toString())
+    private fun Client.deleteDB(message: ProtocolMessage.DB.Delete) {
+        databases.remove(message.databaseName)
         //selectedDatabase[this] = databases.getValue(message.databaseName.toString().toLowerCase())
     }
 
-    private suspend fun Client.selectTable(message: DBProto.SelectTable.Reader) {
+    private suspend fun Client.selectTable(message: ProtocolMessage.Table.Select) {
 
         if (IS_DEBUGGING) {
             println("[S SuperNovae] selectTable(${message.tableName})")
@@ -189,40 +187,31 @@ class DBServer(
             "You must select a database in order to create a table."
         }
 
-        val table = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
+        val table = checkNotNull(selectedDatabase.tables[message.tableName]) {
             "The selected table ${message.tableName} does not exist."
         }
 
-        val responseMessage = DBProto.Message.factory.build { builder ->
-            builder.initSelectTableResponse().apply {
-                setTableName(table.name)
-                setKeyColumn(table.keyColumn)
-                shouldCacheAll = table.shouldCacheAll
-            }
-        }
-
-        suspendSendNovaeMessage(responseMessage)
+        suspendSendNovaeMessage(ProtocolMessage.Table.SelectTableResponse(table.name, table.keyColumn, table.shouldCacheAll))
     }
 
-    private suspend fun Client.deleteRows(message: DBProto.DeleteRows.Reader) {
+    private suspend fun Client.deleteRows(message: ProtocolMessage.Table.DeleteRows) {
 
         if (IS_DEBUGGING) {
-            println("[S SuperNovae] deleteRows(${message.tableName}, ${message.filters.joinToString { "${it.columnName} ${it.check} ${it.compareToValue}" }}, ${message.amountOfRows}, ${message.onlyCheckCache})")
+            println("[S SuperNovae] deleteRows(${message.tableName}, ${message.filters.joinToString { "${it.columnName} ${it.check} ${it.value}" }}, ${message.amountOfRows}, ${message.onlyCheckCache})")
         }
 
         val selectedDatabase = checkNotNull(selectedDatabase[this]) {
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName]) {
             "Unable to find table '${message.tableName}'."
         }
 
         var selectedRows: List<JsonObject>? = null
 
         message.filters.forEach {
-            val filter = Database.Filter.fromCapnProtoReader(it)
-            selectedRows = selectedRows?.filter(filter) ?: selectedTable.filter(filter, message.amountOfRows, message.onlyCheckCache)
+            selectedRows = selectedRows?.filter(it) ?: selectedTable.filter(it, message.amountOfRows, message.onlyCheckCache)
         }
 
         val filteredRows = selectedRows ?: return
@@ -231,10 +220,10 @@ class DBServer(
             selectedTable.delete(it[selectedTable.keyColumn].toString())
         }
 
-        sendNotification(selectedDatabase, selectedTable, filteredRows, DBProto.UpdateType.DELETION)
+        sendNotification(selectedDatabase, selectedTable, filteredRows, ProtocolMessage.UpdateType.DELETION)
     }
 
-    private suspend fun Client.selectAllRows(message: DBProto.SelectAllRows.Reader) {
+    private suspend fun Client.selectAllRows(message: ProtocolMessage.Table.SelectAllRows) {
 
         if (IS_DEBUGGING) {
             println("[S SuperNovae] selectAllRows(${message.tableName})")
@@ -244,70 +233,47 @@ class DBServer(
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName]) {
             "Unable to find table '${message.tableName}'."
         }
 
-        val selectedRows = selectedTable.getAllRows(message.onlyInCache)
+        val selectedRows = selectedTable.getAllRows(message.onlyCheckCache)
 
-        val responseMessage = DBProto.Message.factory.build { builder ->
-            builder.initBlob().also {
-
-                val messages = it.initList(selectedRows.size)
-
-                selectedRows.forEachIndexed { index, row ->
-                    messages.setWithCaveats(DBProto.Message.factory, index, MessageBuilder().initRoot(DBProto.Message.factory).also {
-                        it.initSelectRowResponse().apply {
-                            setRow(row.toString())
-                        }
-                    }.asReader())
-                }
-            }
+        val rowResponses = selectedRows.map {
+            ProtocolMessage.Table.SelectRowResponse(it)
         }
 
-        suspendSendNovaeMessage(responseMessage)
+        suspendSendNovaeMessage(ProtocolMessage.Blob(rowResponses))
     }
 
-    private suspend fun Client.selectRows(message: DBProto.SelectRows.Reader) {
+    private suspend fun Client.selectRows(message: ProtocolMessage.Table.SelectRows) {
 
         if (IS_DEBUGGING) {
-            println("[S SuperNovae] selectRows(${message.tableName}, ${message.filters.joinToString { "${it.columnName} ${it.check} ${it.compareToValue}" }}, ${message.amountOfRows}, ${message.loadIntoCache}, ${message.onlyCheckCache})")
+            println("[S SuperNovae] selectRows(${message.tableName}, ${message.filters.joinToString { "${it.columnName} ${it.check} ${it.value}" }}, ${message.amountOfRows}, ${message.loadIntoCache}, ${message.onlyCheckCache})")
         }
 
         val selectedDatabase = checkNotNull(selectedDatabase[this]) {
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName]) {
             "Unable to find table '${message.tableName}'."
         }
 
         var selectedRows: List<JsonObject>? = null
 
         message.filters.forEach {
-            val filter = Database.Filter.fromCapnProtoReader(it)
-            selectedRows = selectedRows?.filter(filter) ?: selectedTable.filter(filter, message.amountOfRows, message.onlyCheckCache)
+            selectedRows = selectedRows?.filter(it) ?: selectedTable.filter(it, message.amountOfRows, message.onlyCheckCache)
         }
 
-        val responseMessage = DBProto.Message.factory.build { builder ->
-            builder.initBlob().also {
+        val rowResponses = selectedRows?.map {
+            ProtocolMessage.Table.SelectRowResponse(it)
+        } ?: emptyList()
 
-                val messages = it.initList(selectedRows?.size ?: 0)
-
-                selectedRows?.forEachIndexed { index, row ->
-                    messages.setWithCaveats(DBProto.Message.factory, index, MessageBuilder().initRoot(DBProto.Message.factory).also {
-                        it.initSelectRowResponse().apply {
-                            setRow(row.toString())
-                        }
-                    }.asReader())
-                }
-            }
-        }
-
-        suspendSendNovaeMessage(responseMessage)
+        suspendSendNovaeMessage(ProtocolMessage.Blob(rowResponses))
     }
 
-    private suspend fun Client.insertRow(message: DBProto.InsertRow.Reader) {
+    private suspend fun Client.insertRow(message: ProtocolMessage.Table.InsertRow) {
 
         if (IS_DEBUGGING) {
             println("[S SuperNovae] insertRow(${message.tableName}, ${message.row}, ${message.shouldCache})")
@@ -317,17 +283,17 @@ class DBServer(
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName]) {
             "Unable to find table '${message.tableName}'."
         }
 
         val jsonObject = JSON.decodeFromString(JsonObject.serializer(), message.row.toString())
 
         val updateType = if (selectedTable.get(jsonObject.getValue(selectedTable.keyColumn)) == null) {
-            DBProto.UpdateType.INSERT
+            ProtocolMessage.UpdateType.INSERT
         }
         else {
-            DBProto.UpdateType.MODIFICATION
+            ProtocolMessage.UpdateType.MODIFICATION
         }
 
         selectedTable.insert(jsonObject, message.shouldCache)
@@ -335,22 +301,22 @@ class DBServer(
     }
 
     // TODO: Make responses for everything
-    private suspend fun Client.updateRows(message: DBProto.UpdateRows.Reader) {
+    private suspend fun Client.updateRows(message: ProtocolMessage.Table.UpdateRows) {
 
         if (IS_DEBUGGING) {
-            println("[S SuperNovae] updateRows(${message.tableName}, ${message.filter.run { "$columnName $check $compareToValue" }}, ${message.columnName}, ${message.value}, ${message.amountOfRows}, ${message.onlyCheckCache})")
+            println("[S SuperNovae] updateRows(${message.tableName}, ${message.filter.run { "$columnName $check $value" }}, ${message.columnName}, ${message.value}, ${message.amountOfRows}, ${message.onlyCheckCache})")
         }
 
         val selectedDatabase = checkNotNull(selectedDatabase[this]) {
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName]) {
             "Unable to find table '${message.tableName}'."
         }
 
         val rows = selectedTable.filter(
-            Database.Filter.fromCapnProtoReader(message.filter),
+            message.filter,
             message.amountOfRows,
             message.onlyCheckCache
         )
@@ -361,7 +327,7 @@ class DBServer(
 
         selectedTable.update(
             rows,
-            message.columnName.toString(),
+            message.columnName,
             message.value.toString(),
         )
 
@@ -369,28 +335,28 @@ class DBServer(
             selectedTable.get(it.getValue(selectedTable.keyColumn))!!
         }
 
-        sendNotification(selectedDatabase, selectedTable, newRows, DBProto.UpdateType.MODIFICATION)
+        sendNotification(selectedDatabase, selectedTable, newRows, ProtocolMessage.UpdateType.MODIFICATION)
     }
 
 
-    private fun Client.cacheRows(message: DBProto.CacheRows.Reader) {
+    private fun Client.cacheRows(message: ProtocolMessage.Table.CacheRows) {
 
         if (IS_DEBUGGING) {
-            println("[S SuperNovae] selectRows(${message.tableName}, ${message.filter}, ${message.onlyCheckCache})")
+            println("[S SuperNovae] selectRows(${message.tableName}, ${message.filter})")
         }
 
         val selectedDatabase = checkNotNull(selectedDatabase[this]) {
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName]) {
             "Unable to find table '${message.tableName}'."
         }
 
-        selectedTable.cache(Database.Filter.fromCapnProtoReader(message.filter))
+        selectedTable.cache(message.filter)
     }
 
-    private fun Client.cacheTable(message: DBProto.CacheTable.Reader) {
+    private fun Client.cacheTable(message: ProtocolMessage.Table.Cache) {
 
         if (IS_DEBUGGING) {
             println("[S SuperNovae] cacheTable(${message.tableName})")
@@ -400,31 +366,31 @@ class DBServer(
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName]) {
             "Unable to find table '${message.tableName}'."
         }
 
         selectedTable.cacheAllRows()
     }
 
-    private fun Client.uncacheRows(message: DBProto.UncacheRows.Reader) {
+    private fun Client.uncacheRows(message: ProtocolMessage.Table.UncacheRows) {
 
         if (IS_DEBUGGING) {
-            println("[S SuperNovae] uncacheRows(${message.tableName}, ${message.filter}, ${message.onlyCheckCache})")
+            println("[S SuperNovae] uncacheRows(${message.tableName}, ${message.filter})")
         }
 
         val selectedDatabase = checkNotNull(selectedDatabase[this]) {
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName]) {
             "Unable to find table '${message.tableName}'."
         }
 
-        selectedTable.uncache(Database.Filter.fromCapnProtoReader(message.filter))
+        selectedTable.uncache(message.filter)
     }
 
-    private fun Client.uncacheTable(message: DBProto.UncacheTable.Reader) {
+    private fun Client.uncacheTable(message: ProtocolMessage.Table.Uncache) {
 
 
         if (IS_DEBUGGING) {
@@ -435,14 +401,14 @@ class DBServer(
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName]) {
             "Unable to find table '${message.tableName}'."
         }
 
         selectedTable.uncacheAllRows()
     }
 
-    private fun Client.deleteTable(message: DBProto.DeleteTable.Reader) {
+    private fun Client.deleteTable(message: ProtocolMessage.Table.Delete) {
 
         if (IS_DEBUGGING) {
             println("[S SuperNovae] deleteTable(${message.tableName})")
@@ -452,10 +418,10 @@ class DBServer(
             "You must select a database in order to select rows in a table."
         }
 
-        selectedDatabase.deleteTable(message.tableName.toString())
+        selectedDatabase.deleteTable(message.tableName)
     }
 
-    private fun Client.clearTable(message: DBProto.ClearTable.Reader) {
+    private fun Client.clearTable(message: ProtocolMessage.Table.Clear) {
 
         if (IS_DEBUGGING) {
             println("[S SuperNovae] clearTable(${message.tableName})")
@@ -465,14 +431,14 @@ class DBServer(
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName]) {
             "Unable to find table '${message.tableName}'."
         }
 
         selectedTable.clear()
     }
 
-    private fun Client.listenToTable(message: DBProto.ListenToTable.Reader) {
+    private fun Client.listenToTable(message: ProtocolMessage.Table.StartListening) {
 
         if (IS_DEBUGGING) {
             println("[S SuperNovae] listenToTable(${message.tableName})")
@@ -482,14 +448,14 @@ class DBServer(
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName]) {
             "Unable to find table '${message.tableName}'."
         }
 
         changeListeners.getOrPut(this, { mutableMapOf() }).getOrPut(selectedDatabase, { mutableSetOf() }).add(selectedTable)
     }
 
-    private fun Client.removeListenToTable(message: DBProto.RemoveListenToTable.Reader) {
+    private fun Client.removeListenToTable(message: ProtocolMessage.Table.StopListening) {
 
         if (IS_DEBUGGING) {
             println("[S SuperNovae] removeListenToTable(${message.tableName})")
@@ -499,14 +465,14 @@ class DBServer(
             "You must select a database in order to select rows in a table."
         }
 
-        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName.toString()]) {
+        val selectedTable = checkNotNull(selectedDatabase.tables[message.tableName]) {
             "Unable to find table '${message.tableName}'."
         }
 
         changeListeners[this]?.get(selectedDatabase)?.remove(selectedTable)
     }
 
-    private fun Client.removeAllListenToTables(message: DBProto.RemoveAllListenToTables.Reader) {
+    private fun Client.removeAllListenToTables(message: ProtocolMessage.StopListeningToAllTables) {
 
         if (IS_DEBUGGING) {
             println("[S SuperNovae] removeAllListenToTable()")
@@ -515,7 +481,7 @@ class DBServer(
         changeListeners.remove(this)
     }
 
-    private suspend fun sendNotification(database: Database, table: Database.Table, rows: List<JsonObject>, type: DBProto.UpdateType) {
+    private suspend fun sendNotification(database: Database, table: Database.Table, rows: List<JsonObject>, type: ProtocolMessage.UpdateType) {
 
         val message = buildNotificationMessage(table.name, rows, type)
 
@@ -525,27 +491,13 @@ class DBServer(
             .forEach { it.suspendSendNovaeMessage(message) }
     }
 
-    private fun buildNotificationMessage(tableName: String, rows: List<JsonObject>, type: DBProto.UpdateType): MessageBuilder {
-        return DBProto.Message.factory.build { builder ->
-            builder.initBlob().also { it ->
+    private fun buildNotificationMessage(tableName: String, rows: List<JsonObject>, type: ProtocolMessage.UpdateType): ProtocolMessage {
 
-                val messages = it.initList(rows.size)
-
-                rows.forEachIndexed { index, row ->
-                    messages.setWithCaveats(
-                        DBProto.Message.factory,
-                        index,
-                        MessageBuilder().initRoot(DBProto.Message.factory).also {
-                            it.initUpdateNotification().apply {
-                                setTableName(tableName)
-                                setType(type)
-                                setRow(row.toString())
-                            }
-                        }.asReader()
-                    )
-                }
-            }
+        val notificationRows = rows.map {
+            ProtocolMessage.Table.UpdateNotification(tableName, type, it)
         }
+
+        return ProtocolMessage.Blob(notificationRows)
     }
 
     companion object {

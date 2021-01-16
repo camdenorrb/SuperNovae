@@ -2,7 +2,7 @@ package dev.twelveoclock.supernovae.net
 
 import dev.twelveoclock.supernovae.api.Database
 import dev.twelveoclock.supernovae.ext.*
-import dev.twelveoclock.supernovae.proto.DBProto
+import dev.twelveoclock.supernovae.protocol.ProtocolMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -11,6 +11,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.serializer
 import me.camdenorrb.netlius.Netlius
 import me.camdenorrb.netlius.net.Client
@@ -26,10 +27,10 @@ class DBClient(val host: String, val port: Int) {
     val waiterMutex = Mutex()
 
     @Volatile
-    var messageWaiter: Continuation<DBProto.Message.Reader>? = null
+    var messageWaiter: Continuation<ProtocolMessage>? = null
 
     // Table name -> Listeners
-    val notificationListeners = mutableMapOf<String, MutableList<(DBProto.UpdateNotification.Reader) -> Unit>>()
+    val notificationListeners = mutableMapOf<String, MutableList<(ProtocolMessage.Table.UpdateNotification) -> Unit>>()
 
     private lateinit var readTask: Job
 
@@ -55,14 +56,19 @@ class DBClient(val host: String, val port: Int) {
 
                 val message = client.suspendReadNovaeMessage()
 
-                if (message.isBlob && message.blob.list.firstOrNull()?.isUpdateNotification == true) {
+                if (message is ProtocolMessage.Blob && message.messages.firstOrNull() is ProtocolMessage.Table.UpdateNotification) {
 
-                    message.blob.list.map { it.updateNotification }.forEach { notification ->
+                    //@Suppress("UNCHECKED_CAST")
+                    //message as ProtocolMessage.Blob<ProtocolMessage.Table.UpdateNotification>
+
+                    message.messages.forEach { notification ->
+
+                        notification as ProtocolMessage.Table.UpdateNotification
 
                         if (IS_DEBUGGING) {
                             println("[C SuperNovae] Received update: ${notification.tableName} ${notification.row} ${notification.type}")
                         }
-                        notificationListeners[notification.tableName.toString()]?.forEach {
+                        notificationListeners[notification.tableName]?.forEach {
                             it(notification)
                         }
                     }
@@ -70,7 +76,13 @@ class DBClient(val host: String, val port: Int) {
                     continue
                 }
 
-                messageWaiter?.resume(message)
+                try {
+                    messageWaiter?.resume(message)
+                }
+                catch (ex: IllegalStateException) {
+                    println(message)
+                    ex.printStackTrace()
+                }
             }
         }
 
@@ -94,10 +106,10 @@ class DBClient(val host: String, val port: Int) {
         isConnected = false
     }
 
-    suspend fun waitForReply(): DBProto.Message.Reader {
-        return suspendCoroutine {
+    suspend fun <M : ProtocolMessage> waitForReply(): M {
+        return suspendCoroutine<ProtocolMessage> {
             messageWaiter = it
-        }
+        } as M
     }
 
     suspend inline fun <reified R, reified MV, MK : KProperty1<R, MV>> selectTable(
@@ -110,7 +122,7 @@ class DBClient(val host: String, val port: Int) {
         waiterMutex.withLock {
 
             client.sendSelectTable(name)
-            val response = waitForReply(/*DBProto.Message.Which.SELECT_TABLE_RESPONSE*/).selectTableResponse
+            val response = waitForReply<ProtocolMessage.Table.SelectTableResponse>()
 
             return Table(this, name, mainKey, response.shouldCacheAll, rowSerializer, keySerializer)
         }
@@ -190,7 +202,7 @@ class DBClient(val host: String, val port: Int) {
             }
 
             dbClient.waiterMutex.withLock {
-                dbClient.client.sendLoadTable(name)
+                dbClient.client.sendCacheTable(name)
             }
         }
 
@@ -201,7 +213,7 @@ class DBClient(val host: String, val port: Int) {
             }
 
             dbClient.waiterMutex.withLock {
-                dbClient.client.sendLoadTable(name)
+                dbClient.client.sendCacheTable(name)
             }
         }
 
@@ -212,7 +224,7 @@ class DBClient(val host: String, val port: Int) {
             }
 
             dbClient.waiterMutex.withLock {
-                dbClient.client.sendUnloadTable(name)
+                dbClient.client.sendUncacheTable(name)
             }
         }
 
@@ -250,13 +262,13 @@ class DBClient(val host: String, val port: Int) {
             }
         }
 
-        suspend fun listenToUpdates(listener: (type: DBProto.UpdateType, row: R) -> Unit): (DBProto.UpdateNotification.Reader) -> Unit {
+        suspend fun listenToUpdates(listener: (type: ProtocolMessage.UpdateType, row: R) -> Unit): (ProtocolMessage.Table.UpdateNotification) -> Unit {
 
             if (IS_DEBUGGING) {
                 println("[C SuperNovae ($name)] listenToUpdates($listener)")
             }
 
-            val dbListener: (DBProto.UpdateNotification.Reader) -> Unit = {
+            val dbListener: (ProtocolMessage.Table.UpdateNotification) -> Unit = {
 
                 //val oldRowValue = JSON.decodeFromString(rowSerializer, it.oldRow.toString())
                 val newRowValue = JSON.decodeFromString(rowSerializer, it.row.toString())
@@ -276,7 +288,7 @@ class DBClient(val host: String, val port: Int) {
             return dbListener
         }
 
-        suspend fun removeListenToUpdates(listener: (DBProto.UpdateNotification.Reader) -> Unit) {
+        suspend fun removeListenToUpdates(listener: (ProtocolMessage.Table.UpdateNotification) -> Unit) {
 
             if (IS_DEBUGGING) {
                 println("[C SuperNovae ($name)] removeListenToUpdates($listener)")
@@ -287,7 +299,7 @@ class DBClient(val host: String, val port: Int) {
                 dbClient.notificationListeners[name]?.remove(listener)
 
                 if (dbClient.notificationListeners[name]?.isEmpty() == true) {
-                    dbClient.client.sendRemoveListenToTable(name)
+                    dbClient.client.sendStopListeningToTable(name)
                 }
             }
         }
@@ -299,7 +311,7 @@ class DBClient(val host: String, val port: Int) {
             }
 
             val filters = listOf(
-                Database.Filter(mainKeyProperty.name, DBProto.Check.EQUAL, JSON.encodeToJsonElement(keySerializer, key))
+                Database.Filter(mainKeyProperty.name, ProtocolMessage.Check.EQUAL, JSON.encodeToJsonElement(keySerializer, key))
             )
 
 
@@ -307,7 +319,7 @@ class DBClient(val host: String, val port: Int) {
 
                 dbClient.client.sendSelectRows(name, filters, onlyCheckCache, loadIntoCache, 1)
 
-                val rowText = dbClient.waitForReply(/*DBProto.Message.Which.BLOB*/).blob.list.firstOrNull()?.selectRowResponse?.row?.toString()
+                val rowText = (dbClient.waitForReply<ProtocolMessage.Blob>().messages.firstOrNull() as? ProtocolMessage.Table.SelectRowResponse)?.row?.toString()
                         ?: return null
 
                 return JSON.decodeFromString(rowSerializer, rowText)
@@ -324,8 +336,9 @@ class DBClient(val host: String, val port: Int) {
 
                 dbClient.client.sendSelectAllRows(name, onlyInCache)
 
-                return dbClient.waitForReply(/*DBProto.Message.Which.BLOB*/).blob.list.map {
-                    JSON.decodeFromString(rowSerializer, it.selectRowResponse.row.toString())
+                return dbClient.waitForReply<ProtocolMessage.Blob>().messages.map {
+                    it as ProtocolMessage.Table.SelectRowResponse
+                    Json.decodeFromJsonElement(rowSerializer, it.row)
                 }
             }
         }
@@ -340,8 +353,9 @@ class DBClient(val host: String, val port: Int) {
 
                 dbClient.client.sendSelectRows(name, filters, onlyCheckCache, loadIntoCache, amountOfRows)
 
-                return dbClient.waitForReply(/*DBProto.Message.Which.BLOB*/).blob.list.map {
-                    JSON.decodeFromString(rowSerializer, it.selectRowResponse.row.toString())
+                return dbClient.waitForReply<ProtocolMessage.Blob>().messages.map {
+                    it as ProtocolMessage.Table.SelectRowResponse
+                    Json.decodeFromJsonElement(rowSerializer, it.row)
                 }
             }
         }
@@ -353,10 +367,10 @@ class DBClient(val host: String, val port: Int) {
                 println("[C SuperNovae ($name)] insertRow($row)")
             }
 
-            val rowAsString = JSON.encodeToString(rowSerializer, row)
+            val rowAsJsonObject = JSON.encodeToJsonElement(rowSerializer, row) as JsonObject
 
             dbClient.waiterMutex.withLock {
-                dbClient.client.sendInsertRow(name, rowAsString, shouldCache)
+                dbClient.client.sendInsertRow(name, rowAsJsonObject, shouldCache)
             }
         }
 
@@ -367,7 +381,7 @@ class DBClient(val host: String, val port: Int) {
             }
 
             val filters = listOf(
-                Database.Filter(mainKeyProperty.name, DBProto.Check.EQUAL, JSON.encodeToJsonElement(keySerializer, keyValue))
+                Database.Filter(mainKeyProperty.name, ProtocolMessage.Check.EQUAL, JSON.encodeToJsonElement(keySerializer, keyValue))
             )
 
             dbClient.waiterMutex.withLock {
@@ -394,7 +408,7 @@ class DBClient(val host: String, val port: Int) {
                 println("[C SuperNovae ($name)] updateRow[0]($row, $newValueProperty, ${newValueProperty.name}, $serializer, $onlyCheckCache)")
             }
 
-            val filter = Database.Filter(mainKeyProperty.name, DBProto.Check.EQUAL, JSON.encodeToJsonElement(keySerializer, mainKeyProperty.get(row)))
+            val filter = Database.Filter(mainKeyProperty.name, ProtocolMessage.Check.EQUAL, JSON.encodeToJsonElement(keySerializer, mainKeyProperty.get(row)))
 
             // Don't use mutex here
             updateRows(filter, newValueProperty, newValueProperty.get(row), serializer, 1, onlyCheckCache)
@@ -406,7 +420,7 @@ class DBClient(val host: String, val port: Int) {
                 println("[C SuperNovae ($name)] updateRow[1]($keyValue, $newValueProperty, ${newValueProperty.name}, $newValue, $serializer)")
             }
 
-            val filter = Database.Filter(mainKeyProperty.name, DBProto.Check.EQUAL, JSON.encodeToJsonElement(keySerializer, keyValue))
+            val filter = Database.Filter(mainKeyProperty.name, ProtocolMessage.Check.EQUAL, JSON.encodeToJsonElement(keySerializer, keyValue))
 
             // Don't use mutex here
             updateRows(filter, newValueProperty, newValue, serializer, 1, onlyCheckCache)
@@ -421,9 +435,9 @@ class DBClient(val host: String, val port: Int) {
             dbClient.waiterMutex.withLock {
                 dbClient.client.sendUpdateRows(
                     name,
-                    property.name,
-                    JSON.encodeToString(serializer, newValue),
                     filter,
+                    property.name,
+                    JSON.encodeToJsonElement(serializer, newValue),
                     amountOfRows,
                     onlyCheckCache
                 )

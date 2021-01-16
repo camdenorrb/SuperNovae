@@ -2,11 +2,13 @@ package dev.twelveoclock.supernovae.api
 
 import dev.twelveoclock.supernovae.config.TableConfig
 import dev.twelveoclock.supernovae.ext.invoke
-import dev.twelveoclock.supernovae.proto.DBProto
+import dev.twelveoclock.supernovae.protocol.ProtocolMessage
+import dev.twelveoclock.supernovae.serializer.JsonElementStringSerializer
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import kotlinx.serialization.serializer
-import org.capnproto.MessageBuilder
+//import org.capnproto.MessageBuilder
 import java.io.File
 import kotlin.reflect.KProperty1
 
@@ -167,7 +169,7 @@ data class Database(val folder: File) {
         }
 
         fun get(key: JsonElement, onlyCheckCache: Boolean = false): JsonObject? {
-            val keyFilter = Filter(keyColumn, DBProto.Check.EQUAL, key)
+            val keyFilter = Filter(keyColumn, ProtocolMessage.Check.EQUAL, key)
             return filter(keyFilter, 1).firstOrNull()
         }
 
@@ -254,7 +256,7 @@ data class Database(val folder: File) {
 
         internal fun cacheAllRows() {
             folder.listFiles()?.filter { it.name != SETTINGS_FILE_NAME }?.forEach {
-                cachedRows[it.nameWithoutExtension] = JSON.decodeFromString(JsonObject.serializer(), it.readText()).also { println(it) }
+                cachedRows[it.nameWithoutExtension] = JSON.decodeFromString(JsonObject.serializer(), it.readText())
             }
         }
 
@@ -285,50 +287,60 @@ data class Database(val folder: File) {
 
     }
 
+    @Serializable
     data class Filter(
         val columnName: String,
-        val check: DBProto.Check,
-        val value: JsonElement
+        val check: ProtocolMessage.Check,
+        @Serializable(JsonElementStringSerializer::class) val value: JsonElement
     ) {
 
-        fun toCapnProtoReader(): DBProto.Filter.Reader {
+        /*
+        fun toProto(): ProtocolMessage.Filter {
+            ProtocolMessage.Filter(columnName, check, value)
+        }
+        */
+
+        /*
+        fun toCapnProtoReader(): ProtocolMessage.Filter {
             return MessageBuilder().initRoot(DBProto.Filter.factory).also {
                 it.setColumnName(columnName)
                 it.check = check
                 it.setCompareToValue(value.toString())
             }.asReader()
         }
+        */
 
         companion object {
 
             // Equals
-            inline fun <T, reified R> eq(property: KProperty1<T, R>, value: R, serializer: KSerializer<R> = serializer()): Filter {
-                return Filter(property.name, DBProto.Check.EQUAL, JSON.encodeToJsonElement(serializer, value))
+            inline fun <T, reified R> eq(property: KProperty1<T, R>, value: R, serializer: KSerializer<R> = serializer<R>()): Filter {
+                return Filter(property.name, ProtocolMessage.Check.EQUAL, JSON.encodeToJsonElement(serializer, value))
             }
 
 
             // Lesser than
-            inline fun <T, reified R> lt(property: KProperty1<T, R>, value: R, serializer: KSerializer<R> = serializer()): Filter {
-                return Filter(property.name, DBProto.Check.LESSER_THAN, JSON.encodeToJsonElement(serializer, value))
+            inline fun <T, reified R> lt(property: KProperty1<T, R>, value: R, serializer: KSerializer<R> = serializer<R>()): Filter {
+                return Filter(property.name, ProtocolMessage.Check.LESSER_THAN, JSON.encodeToJsonElement(serializer, value))
             }
 
             // Greater than
-            inline fun <T, reified R> gt(property: KProperty1<T, R>, value: R, serializer: KSerializer<R> = serializer()): Filter {
-                return Filter(property.name, DBProto.Check.GREATER_THAN, JSON.encodeToJsonElement(serializer, value))
+            inline fun <T, reified R> gt(property: KProperty1<T, R>, value: R, serializer: KSerializer<R> = serializer<R>()): Filter {
+                return Filter(property.name, ProtocolMessage.Check.GREATER_THAN, JSON.encodeToJsonElement(serializer, value))
             }
 
 
             // Lesser than or equals
-            inline fun <T, reified R> lte(property: KProperty1<T, R>, value: R, serializer: KSerializer<R> = serializer()): Filter {
-                return Filter(property.name, DBProto.Check.LESSER_THAN_OR_EQUAL, JSON.encodeToJsonElement(serializer, value))
+            inline fun <T, reified R> lte(property: KProperty1<T, R>, value: R, serializer: KSerializer<R> = serializer<R>()): Filter {
+                return Filter(property.name, ProtocolMessage.Check.LESSER_THAN_OR_EQUAL, JSON.encodeToJsonElement(serializer, value))
             }
 
             // Greater than or equals
-            inline fun <T, reified R> gte(property: KProperty1<T, R>, value: R, serializer: KSerializer<R> = serializer()): Filter {
-                return Filter(property.name, DBProto.Check.GREATER_THAN_OR_EQUAL, JSON.encodeToJsonElement(serializer, value))
+            inline fun <T, reified R> gte(property: KProperty1<T, R>, value: R, serializer: KSerializer<R> = serializer<R>()): Filter {
+                return Filter(property.name, ProtocolMessage.Check.GREATER_THAN_OR_EQUAL, JSON.encodeToJsonElement(serializer, value))
             }
 
 
+            /*
             fun fromCapnProtoReader(filter: DBProto.Filter.Reader): Filter {
 
                 val columnName = filter.columnName.toString()
@@ -336,7 +348,7 @@ data class Database(val folder: File) {
 
                 return Filter(columnName, filter.check, compareToValue)
             }
-
+            */
         }
 
     }

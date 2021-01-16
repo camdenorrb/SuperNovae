@@ -1,19 +1,14 @@
-import java.io.FileInputStream
-import java.util.*
-
 plugins {
     application
-    java
     idea
-    maven
     `maven-publish`
     id("com.github.johnrengelman.shadow") version "6.1.0"
-    kotlin("jvm") version "1.4.10"
-    kotlin("plugin.serialization") version "1.4.10"
+    kotlin("jvm") version "1.4.21"
+    kotlin("plugin.serialization") version "1.4.21"
 }
 
 group = "dev.twelveoclock"
-version = "1.0.41"
+version = "1.0.52-Debug"
 
 repositories {
 
@@ -29,9 +24,10 @@ repositories {
 dependencies {
 
     implementation(kotlin("stdlib-jdk8"))
-    implementation("org.capnproto:runtime:0.1.5")
+    //implementation("org.capnproto:runtime:0.1.5")
     implementation("me.camdenorrb:Netlius:1.0.4")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.0.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
     implementation("me.camdenorrb:KCommons:1.2.1")
     implementation("commons-cli:commons-cli:1.4")
@@ -92,15 +88,13 @@ publishing {
             url = uri("https://maven.pkg.jetbrains.space/camdenorrb/p/twelveoclock-dev/maven")
 
             credentials {
-
-                val secretProperties = Properties().apply {
-                    load(FileInputStream("secret-gradle.properties"))
+                project.properties["twelveoclockMavenUsername"]?.let { twelveoclockMavenUsername ->
+                    username = twelveoclockMavenUsername.toString()
                 }
-
-                username = secretProperties["username"].toString()
-                password = secretProperties["password"].toString()
+                project.properties["twelveoclockMavenPassword"]?.let { twelveoclockMavenPassword ->
+                    username = twelveoclockMavenPassword.toString()
+                }
             }
-
         }
     }
 }

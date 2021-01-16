@@ -1,13 +1,13 @@
 package dev.twelveoclock.supernovae.ext
 
-import dev.twelveoclock.supernovae.proto.DBProto
+import dev.twelveoclock.supernovae.protocol.ProtocolMessage
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 
 
-operator fun DBProto.Check.invoke(value1: JsonElement, value2: JsonElement): Boolean {
+operator fun ProtocolMessage.Check.invoke(value1: JsonElement, value2: JsonElement): Boolean {
 
-    if (this == DBProto.Check.EQUAL) {
+    if (this == ProtocolMessage.Check.EQUAL) {
         return value1 == value2
     }
 
@@ -16,10 +16,10 @@ operator fun DBProto.Check.invoke(value1: JsonElement, value2: JsonElement): Boo
 
     return when (this) {
 
-        DBProto.Check.GREATER_THAN -> value1Number > value2Number
-        DBProto.Check.LESSER_THAN  -> value1Number < value2Number
-        DBProto.Check.LESSER_THAN_OR_EQUAL  -> value1Number <= value2Number
-        DBProto.Check.GREATER_THAN_OR_EQUAL -> value1Number >= value2Number
+        ProtocolMessage.Check.GREATER_THAN -> value1Number > value2Number
+        ProtocolMessage.Check.LESSER_THAN  -> value1Number < value2Number
+        ProtocolMessage.Check.LESSER_THAN_OR_EQUAL  -> value1Number <= value2Number
+        ProtocolMessage.Check.GREATER_THAN_OR_EQUAL -> value1Number >= value2Number
 
         else -> false
     }

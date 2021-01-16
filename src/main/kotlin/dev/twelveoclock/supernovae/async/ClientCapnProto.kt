@@ -1,5 +1,6 @@
 package dev.twelveoclock.supernovae.async
 
+/*
 import dev.twelveoclock.supernovae.project.BYTES_PER_WORD
 import me.camdenorrb.kcommons.io.ByteBufferReaderChannel
 import me.camdenorrb.netlius.net.Client
@@ -237,3 +238,4 @@ object ClientCapnProto {
     }
 
 }
+*/

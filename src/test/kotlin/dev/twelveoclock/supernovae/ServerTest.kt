@@ -1,22 +1,20 @@
 package dev.twelveoclock.supernovae
 
 import dev.twelveoclock.supernovae.api.Database
-import dev.twelveoclock.supernovae.async.ClientCapnProto
 import dev.twelveoclock.supernovae.ext.*
 import dev.twelveoclock.supernovae.net.DBClient
-import dev.twelveoclock.supernovae.proto.DBProto
+import dev.twelveoclock.supernovae.protocol.ProtocolMessage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import me.camdenorrb.kcommons.ext.getBytes
+import kotlinx.serialization.protobuf.ProtoBuf
+import kotlinx.serialization.serializer
 import me.camdenorrb.netlius.Netlius
 import java.io.File
-import java.nio.ByteBuffer
-import kotlin.random.Random
-import kotlin.system.exitProcess
 import kotlin.test.Test
 
 @Serializable
@@ -45,14 +43,15 @@ class ServerTest {
             //client.sendSelectTable("MeowTable")
             val thing = Thing("Mr.Midnight", "Cool")
             println(Json.encodeToString(Thing.serializer(), thing))
-            client.sendInsertRow("MeowTable", Json.encodeToString(Thing.serializer(), thing))
+            client.sendInsertRow("MeowTable", Json.encodeToJsonElement(Thing.serializer(), thing) as JsonObject)
             client.sendSelectRows(
                 "MeowTable",
-                listOf(Database.Filter("name", DBProto.Check.EQUAL, JsonPrimitive("Mr.Midnight")))
+                listOf(Database.Filter("name", ProtocolMessage.Check.EQUAL, JsonPrimitive("Mr.Midnight")))
             )
 
-            client.suspendReadNovaeMessage().blob.list.forEach {
-                println(it.selectRowResponse.row.toString())
+            (client.suspendReadNovaeMessage() as ProtocolMessage.Blob).messages.forEach {
+                it as ProtocolMessage.Table.SelectRowResponse
+                println(it.row.toString())
             }
 
             delay(10000)
@@ -64,6 +63,14 @@ class ServerTest {
 
     @Test
     fun `high level server testing`() {
+
+        val blob = ProtocolMessage.Blob(
+            listOf(ProtocolMessage.Table.SelectRowResponse(JsonObject(emptyMap())))
+        )
+
+        ProtoBuf.encodeToByteArray(serializer(), blob)
+
+        //ProtoBuf.encodeToByteArray(ProtocolMessage.Table.SelectRowResponse.serializer(), ProtocolMessage.Table.SelectRowResponse(JsonObject(emptyMap())))
 
         SuperNovae.server("127.0.0.1", 12345, testingFolder)
 
@@ -108,6 +115,7 @@ class ServerTest {
         testingFolder.delete()
     }
 
+    /*
 
     @Test
     fun `zero packing test`() {
@@ -259,6 +267,6 @@ class ServerTest {
 
         error("Didn't check")
     }
-
+    */
 
 }
