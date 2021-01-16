@@ -34,6 +34,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
     implementation("me.camdenorrb:KCommons:1.2.1")
+    implementation("commons-cli:commons-cli:1.4")
 
     testImplementation(kotlin("test-junit"))
 }
