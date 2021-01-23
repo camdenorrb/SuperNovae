@@ -3,23 +3,23 @@ package dev.twelveoclock.supernovae.protocol
 import dev.twelveoclock.supernovae.api.Database
 import dev.twelveoclock.supernovae.serializer.JsonElementStringSerializer
 import dev.twelveoclock.supernovae.serializer.JsonObjectStringSerializer
-import dev.twelveoclock.supernovae.serializer.UUIDSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import java.util.*
 
 @Serializable
 sealed class ProtocolMessage {
 
     // TODO: Change this when queries get more complex
     interface Query {
-        val queryUUID: UUID
+        val queryID: Int
     }
 
-    interface QueryResponse {
-        val queryUUID: UUID
-    }
+    @Serializable
+    class QueryResponse(
+        val queryID: Int,
+        val innerMessage: ProtocolMessage
+    ) : ProtocolMessage()
 
 
     // Make this use generics when KotlinX supports it - NVM, it shouldn't be generic, ex advanced queries
@@ -68,8 +68,9 @@ sealed class ProtocolMessage {
 
         @Serializable
         data class Select(
+            override val queryID: Int,
             val tableName: String
-        ) : Table()
+        ) : Table(), Query
 
         @Serializable
         data class Clear(
@@ -82,7 +83,7 @@ sealed class ProtocolMessage {
         ) : Table()
 
         @Serializable
-        data class Uncache(
+        data class UnCache(
             val tableName: String
         ) : Table()
 
@@ -129,14 +130,14 @@ sealed class ProtocolMessage {
 
         @Serializable
         data class SelectAllRows(
-            @Serializable(UUIDSerializer::class) override val queryUUID: UUID,
+            override val queryID: Int,
             val tableName: String,
             val onlyCheckCache: Boolean = false,
         ) : Table(), Query
 
         @Serializable
         data class SelectRows(
-            @Serializable(UUIDSerializer::class) override val queryUUID: UUID,
+            override val queryID: Int,
             val tableName: String,
             val filters: List<Database.Filter>,
             val onlyCheckCache: Boolean = false,
@@ -155,24 +156,23 @@ sealed class ProtocolMessage {
 
         @Serializable
         data class SelectRowResponse(
+            val queryID: Int,
             @Serializable(JsonObjectStringSerializer::class) val row: JsonObject
         ) : Table()
 
         @Serializable
         data class SelectTableResponse(
-            @Serializable(UUIDSerializer::class) override val queryUUID: UUID,
             val tableName: String,
             val keyColumn: String,
             val shouldCacheAll: Boolean
-        ) : Table(), QueryResponse
+        ) : Table()
 
         @Serializable
         data class UpdateNotification(
-            @Serializable(UUIDSerializer::class) override val queryUUID: UUID,
             val tableName: String,
             val type: UpdateType,
             @Serializable(JsonObjectStringSerializer::class) val row: JsonObject
-        ) : Table(), QueryResponse
+        ) : Table()
 
     }
 

@@ -3,6 +3,7 @@ package dev.twelveoclock.supernovae.net
 import dev.twelveoclock.supernovae.api.Database
 import dev.twelveoclock.supernovae.ext.*
 import dev.twelveoclock.supernovae.protocol.ProtocolMessage
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -15,8 +16,10 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.serializer
 import me.camdenorrb.netlius.Netlius
 import me.camdenorrb.netlius.net.Client
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlin.reflect.KProperty1
 
@@ -26,11 +29,14 @@ class DBClient(val host: String, val port: Int) {
 
     val waiterMutex = Mutex()
 
-    @Volatile
-    var messageWaiter: Continuation<ProtocolMessage>? = null
+    @PublishedApi
+    internal val nextQueryID = atomic(0)
+
+    var messageWaiters = ConcurrentHashMap<Int, Continuation<ProtocolMessage>>()
 
     // Table name -> Listeners
     val notificationListeners = mutableMapOf<String, MutableList<(ProtocolMessage.Table.UpdateNotification) -> Unit>>()
+
 
     private lateinit var readTask: Job
 
@@ -73,15 +79,20 @@ class DBClient(val host: String, val port: Int) {
                         }
                     }
 
-                    continue
                 }
+                else if (message is ProtocolMessage.QueryResponse) {
 
-                try {
-                    messageWaiter?.resume(message)
-                }
-                catch (ex: IllegalStateException) {
-                    println(message)
-                    ex.printStackTrace()
+                    val waiter = checkNotNull(messageWaiters.remove(message.queryID)) {
+                        "Could not get a waiter for query id ${message.queryID}"
+                    }
+
+                    try {
+                        waiter.resume(message.innerMessage)
+                    }
+                    catch (ex: IllegalStateException) {
+                        println(message)
+                        ex.printStackTrace()
+                    }
                 }
             }
         }
@@ -95,9 +106,13 @@ class DBClient(val host: String, val port: Int) {
             return
         }
 
+        messageWaiters.forEach {
+            it.value.resumeWithException(IllegalStateException("Client has been disconnected"))
+        }
+
         readTask.cancel()
         client.close()
-        messageWaiter = null
+        messageWaiters.clear()
 
         if (waiterMutex.isLocked) {
             waiterMutex.unlock()
@@ -106,9 +121,9 @@ class DBClient(val host: String, val port: Int) {
         isConnected = false
     }
 
-    suspend fun <M : ProtocolMessage> waitForReply(): M {
+    suspend fun <M : ProtocolMessage> waitForReply(queryID: Int): M {
         return suspendCoroutine<ProtocolMessage> {
-            messageWaiter = it
+            messageWaiters[queryID] = it
         } as M
     }
 
@@ -121,8 +136,10 @@ class DBClient(val host: String, val port: Int) {
 
         waiterMutex.withLock {
 
-            client.sendSelectTable(name)
-            val response = waitForReply<ProtocolMessage.Table.SelectTableResponse>()
+            val queryID = nextQueryID.getAndIncrement()
+
+            client.sendSelectTable(queryID, name)
+            val response = waitForReply<ProtocolMessage.Table.SelectTableResponse>(queryID)
 
             return Table(this, name, mainKey, response.shouldCacheAll, rowSerializer, keySerializer)
         }
@@ -317,9 +334,11 @@ class DBClient(val host: String, val port: Int) {
 
             dbClient.waiterMutex.withLock {
 
-                dbClient.client.sendSelectRows(name, filters, onlyCheckCache, loadIntoCache, 1)
+                val queryID = dbClient.nextQueryID.getAndIncrement()
 
-                val rowText = (dbClient.waitForReply<ProtocolMessage.Blob>().messages.firstOrNull() as? ProtocolMessage.Table.SelectRowResponse)?.row?.toString()
+                dbClient.client.sendSelectRows(queryID, name, filters, onlyCheckCache, loadIntoCache, 1)
+
+                val rowText = (dbClient.waitForReply<ProtocolMessage.Blob>(queryID).messages.firstOrNull() as? ProtocolMessage.Table.SelectRowResponse)?.row?.toString()
                         ?: return null
 
                 return JSON.decodeFromString(rowSerializer, rowText)
@@ -334,9 +353,11 @@ class DBClient(val host: String, val port: Int) {
 
             dbClient.waiterMutex.withLock {
 
-                dbClient.client.sendSelectAllRows(name, onlyInCache)
+                val queryID = dbClient.nextQueryID.getAndIncrement()
 
-                return dbClient.waitForReply<ProtocolMessage.Blob>().messages.map {
+                dbClient.client.sendSelectAllRows(queryID, name, onlyInCache)
+
+                return dbClient.waitForReply<ProtocolMessage.Blob>(queryID).messages.map {
                     it as ProtocolMessage.Table.SelectRowResponse
                     Json.decodeFromJsonElement(rowSerializer, it.row)
                 }
@@ -351,9 +372,11 @@ class DBClient(val host: String, val port: Int) {
 
             dbClient.waiterMutex.withLock {
 
-                dbClient.client.sendSelectRows(name, filters, onlyCheckCache, loadIntoCache, amountOfRows)
+                val queryID = dbClient.nextQueryID.getAndIncrement()
 
-                return dbClient.waitForReply<ProtocolMessage.Blob>().messages.map {
+                dbClient.client.sendSelectRows(queryID, name, filters, onlyCheckCache, loadIntoCache, amountOfRows)
+
+                return dbClient.waitForReply<ProtocolMessage.Blob>(queryID).messages.map {
                     it as ProtocolMessage.Table.SelectRowResponse
                     Json.decodeFromJsonElement(rowSerializer, it.row)
                 }

@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "dev.twelveoclock"
-version = "1.0.52-Debug"
+version = "1.0.53-Debug"
 
 repositories {
 
@@ -26,6 +26,7 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
     //implementation("org.capnproto:runtime:0.1.5")
     implementation("me.camdenorrb:Netlius:1.0.4")
+    implementation("org.jetbrains.kotlinx:atomicfu:0.15.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.0.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
@@ -92,7 +93,7 @@ publishing {
                     username = twelveoclockMavenUsername.toString()
                 }
                 project.properties["twelveoclockMavenPassword"]?.let { twelveoclockMavenPassword ->
-                    username = twelveoclockMavenPassword.toString()
+                    password = twelveoclockMavenPassword.toString()
                 }
             }
         }

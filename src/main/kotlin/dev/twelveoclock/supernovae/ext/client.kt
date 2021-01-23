@@ -8,6 +8,8 @@ import kotlinx.serialization.protobuf.ProtoBuf
 import me.camdenorrb.netlius.net.Client
 import me.camdenorrb.netlius.net.Packet
 
+// TODO: Get rid of all this
+
 suspend fun Client.suspendSendNovaeMessage(message: ProtocolMessage) {
     val byteArray = ProtoBuf.encodeToByteArray(ProtocolMessage.serializer(), message)
     queueAndFlush(Packet().int(byteArray.size).bytes(byteArray))
@@ -34,12 +36,12 @@ suspend fun Client.sendSelectDB(dbName: String) {
     suspendSendNovaeMessage(ProtocolMessage.DB.Select(dbName))
 }
 
-suspend fun Client.sendSelectAllRows(tableName: String, onlyInCache: Boolean = false) {
-    suspendSendNovaeMessage(ProtocolMessage.Table.SelectAllRows(tableName, onlyInCache))
+suspend fun Client.sendSelectAllRows(queryID: Int, tableName: String, onlyInCache: Boolean = false) {
+    suspendSendNovaeMessage(ProtocolMessage.Table.SelectAllRows(queryID, tableName, onlyInCache))
 }
 
-suspend fun Client.sendSelectRows(tableName: String, filters: List<Database.Filter>, onlyCheckCache: Boolean = false, loadIntoCache: Boolean = false, amountOfRows: Int = -1) {
-    suspendSendNovaeMessage(ProtocolMessage.Table.SelectRows(tableName, filters, onlyCheckCache, loadIntoCache, amountOfRows))
+suspend fun Client.sendSelectRows(queryID: Int, tableName: String, filters: List<Database.Filter>, onlyCheckCache: Boolean = false, loadIntoCache: Boolean = false, amountOfRows: Int = -1) {
+    suspendSendNovaeMessage(ProtocolMessage.Table.SelectRows(queryID, tableName, filters, onlyCheckCache, loadIntoCache, amountOfRows))
 }
 
 suspend fun Client.sendDeleteRows(tableName: String, filters: List<Database.Filter>, amountOfRows: Int = -1) {
@@ -62,12 +64,12 @@ suspend fun Client.sendCacheTable(tableName: String) {
     suspendSendNovaeMessage(ProtocolMessage.Table.Cache(tableName))
 }
 
-suspend fun Client.sendSelectTable(tableName: String) {
-    suspendSendNovaeMessage(ProtocolMessage.Table.Select(tableName))
+suspend fun Client.sendSelectTable(queryID: Int, tableName: String) {
+    suspendSendNovaeMessage(ProtocolMessage.Table.Select(queryID, tableName))
 }
 
 suspend fun Client.sendUncacheTable(tableName: String) {
-    suspendSendNovaeMessage(ProtocolMessage.Table.Uncache(tableName))
+    suspendSendNovaeMessage(ProtocolMessage.Table.UnCache(tableName))
 }
 
 suspend fun Client.sendDeleteTable(tableName: String) {

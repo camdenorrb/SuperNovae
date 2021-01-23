@@ -89,7 +89,7 @@ class DBServer(
                     is ProtocolMessage.Table.Create -> client.createTable(message)
                     is ProtocolMessage.Table.Select -> client.selectTable(message)
                     is ProtocolMessage.Table.Cache -> client.cacheTable(message)
-                    is ProtocolMessage.Table.Uncache -> client.uncacheTable(message)
+                    is ProtocolMessage.Table.UnCache -> client.uncacheTable(message)
                     is ProtocolMessage.Table.Clear -> client.clearTable(message)
                     is ProtocolMessage.Table.StartListening -> client.listenToTable(message)
                     is ProtocolMessage.Table.StopListening -> client.removeListenToTable(message)
@@ -191,7 +191,7 @@ class DBServer(
             "The selected table ${message.tableName} does not exist."
         }
 
-        suspendSendNovaeMessage(ProtocolMessage.Table.SelectTableResponse(table.name, table.keyColumn, table.shouldCacheAll))
+        suspendSendNovaeMessage(ProtocolMessage.QueryResponse(message.queryID, ProtocolMessage.Table.SelectTableResponse(table.name, table.keyColumn, table.shouldCacheAll)))
     }
 
     private suspend fun Client.deleteRows(message: ProtocolMessage.Table.DeleteRows) {
@@ -240,10 +240,10 @@ class DBServer(
         val selectedRows = selectedTable.getAllRows(message.onlyCheckCache)
 
         val rowResponses = selectedRows.map {
-            ProtocolMessage.Table.SelectRowResponse(it)
+            ProtocolMessage.Table.SelectRowResponse(message.queryID, it)
         }
 
-        suspendSendNovaeMessage(ProtocolMessage.Blob(rowResponses))
+        suspendSendNovaeMessage(ProtocolMessage.QueryResponse(message.queryID, ProtocolMessage.Blob(rowResponses)))
     }
 
     private suspend fun Client.selectRows(message: ProtocolMessage.Table.SelectRows) {
@@ -267,10 +267,10 @@ class DBServer(
         }
 
         val rowResponses = selectedRows?.map {
-            ProtocolMessage.Table.SelectRowResponse(it)
+            ProtocolMessage.Table.SelectRowResponse(message.queryID, it)
         } ?: emptyList()
 
-        suspendSendNovaeMessage(ProtocolMessage.Blob(rowResponses))
+        suspendSendNovaeMessage(ProtocolMessage.QueryResponse(message.queryID, ProtocolMessage.Blob(rowResponses)))
     }
 
     private suspend fun Client.insertRow(message: ProtocolMessage.Table.InsertRow) {
@@ -390,7 +390,7 @@ class DBServer(
         selectedTable.uncache(message.filter)
     }
 
-    private fun Client.uncacheTable(message: ProtocolMessage.Table.Uncache) {
+    private fun Client.uncacheTable(message: ProtocolMessage.Table.UnCache) {
 
 
         if (IS_DEBUGGING) {

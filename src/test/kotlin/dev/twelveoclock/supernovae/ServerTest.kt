@@ -11,8 +11,6 @@ import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.protobuf.ProtoBuf
-import kotlinx.serialization.serializer
 import me.camdenorrb.netlius.Netlius
 import java.io.File
 import kotlin.test.Test
@@ -45,6 +43,7 @@ class ServerTest {
             println(Json.encodeToString(Thing.serializer(), thing))
             client.sendInsertRow("MeowTable", Json.encodeToJsonElement(Thing.serializer(), thing) as JsonObject)
             client.sendSelectRows(
+                1,
                 "MeowTable",
                 listOf(Database.Filter("name", ProtocolMessage.Check.EQUAL, JsonPrimitive("Mr.Midnight")))
             )
@@ -63,12 +62,6 @@ class ServerTest {
 
     @Test
     fun `high level server testing`() {
-
-        val blob = ProtocolMessage.Blob(
-            listOf(ProtocolMessage.Table.SelectRowResponse(JsonObject(emptyMap())))
-        )
-
-        ProtoBuf.encodeToByteArray(serializer(), blob)
 
         //ProtoBuf.encodeToByteArray(ProtocolMessage.Table.SelectRowResponse.serializer(), ProtocolMessage.Table.SelectRowResponse(JsonObject(emptyMap())))
 
