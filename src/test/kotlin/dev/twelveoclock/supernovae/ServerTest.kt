@@ -37,6 +37,7 @@ class ServerTest {
 
             client.sendCreateDB("MeowDB")
             client.sendSelectDB("MeowDB")
+
             client.sendCreateTable("MeowTable", Thing::name.name, true)
             //client.sendSelectTable("MeowTable")
             val thing = Thing("Mr.Midnight", "Cool")

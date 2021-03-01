@@ -3,12 +3,12 @@ plugins {
     idea
     `maven-publish`
     id("com.github.johnrengelman.shadow") version "6.1.0"
-    kotlin("jvm") version "1.4.21"
-    kotlin("plugin.serialization") version "1.4.21"
+    kotlin("jvm") version "1.4.31"
+    kotlin("plugin.serialization") version "1.4.31"
 }
 
 group = "dev.twelveoclock"
-version = "1.0.53-Debug"
+version = "1.0.54-Debug"
 
 repositories {
 
