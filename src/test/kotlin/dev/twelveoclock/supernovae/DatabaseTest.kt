@@ -3,6 +3,7 @@ package dev.twelveoclock.supernovae
 import dev.twelveoclock.supernovae.net.DBClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.builtins.serializer
 import org.junit.Test
 import java.io.File
 
@@ -45,6 +46,35 @@ class DatabaseTest {
             delay(1000)
 
             println(initTable.selectRow(1))
+        }
+    }
+
+
+    @Test
+    fun `disconnect pause test`() {
+
+        val server = SuperNovae.server("127.0.0.1", 12345, testingFolder)
+        val client = DBClient("127.0.0.1", 12345).apply { connect() }
+
+
+        runBlocking {
+
+            client.createDB("Meow")
+            client.selectDB("Meow")
+
+            client.createTable("Meow", "mew")
+            client.createTable("MeowTable", Thing::name.name, true)
+
+            val table = client.selectTable("MeowTable", Thing::name, Thing.serializer(), String.serializer())
+
+            server.stop()
+            println("Stopped")
+
+            delay(10000)
+
+            println("Attempting to retrieve")
+            table.selectRow("Meow")
+            println("Done retrieving")
         }
     }
 

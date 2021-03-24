@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "dev.twelveoclock"
-version = "1.0.54-Debug"
+version = "1.0.55-Debug"
 
 repositories {
 
@@ -17,7 +17,17 @@ repositories {
     mavenCentral()
 
     maven("https://maven.pkg.jetbrains.space/camdenorrb/p/twelveoclock-dev/maven") {
-        name = "Camdenorrb"
+
+        name = "TwelveOClockDev"
+
+        credentials {
+            project.properties["twelveoclockMavenUsername"]?.let { twelveoclockMavenUsername ->
+                username = twelveoclockMavenUsername.toString()
+            }
+            project.properties["twelveoclockMavenPassword"]?.let { twelveoclockMavenPassword ->
+                password = twelveoclockMavenPassword.toString()
+            }
+        }
     }
 }
 
@@ -25,11 +35,11 @@ dependencies {
 
     implementation(kotlin("stdlib-jdk8"))
     //implementation("org.capnproto:runtime:0.1.5")
-    implementation("me.camdenorrb:Netlius:1.0.4")
+    implementation("me.camdenorrb:Netlius:1.0.12")
     implementation("org.jetbrains.kotlinx:atomicfu:0.15.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.0.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.1.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.1.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3")
     implementation("me.camdenorrb:KCommons:1.2.1")
     implementation("commons-cli:commons-cli:1.4")
 
@@ -57,13 +67,19 @@ tasks {
     }
 
     compileKotlin {
-        kotlinOptions.jvmTarget = "14"
+        kotlinOptions.useIR = true
+        kotlinOptions.jvmTarget = JavaVersion.VERSION_15.majorVersion
+        kotlinOptions.apiVersion = "1.4"
+        kotlinOptions.freeCompilerArgs = listOf("-Xjvm-default=compatibility", "-Xmulti-platform", "-Xuse-experimental=kotlin.ExperimentalStdlibApi", "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes")
     }
     compileTestKotlin {
-        kotlinOptions.jvmTarget = "14"
+        kotlinOptions.useIR = true
+        kotlinOptions.jvmTarget = JavaVersion.VERSION_15.majorVersion
+        kotlinOptions.apiVersion = "1.4"
+        kotlinOptions.freeCompilerArgs = listOf("-Xjvm-default=compatibility", "-Xmulti-platform", "-Xuse-experimental=kotlin.ExperimentalStdlibApi", "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes")
     }
     wrapper {
-        gradleVersion = "6.7.1"
+        gradleVersion = "6.8.3"
     }
     artifacts {
         add("archives", sourcesJar)
@@ -98,4 +114,8 @@ publishing {
             }
         }
     }
+}
+
+repositories {
+
 }
