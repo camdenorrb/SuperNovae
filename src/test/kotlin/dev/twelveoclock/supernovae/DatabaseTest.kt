@@ -56,7 +56,6 @@ class DatabaseTest {
         val server = SuperNovae.server("127.0.0.1", 12345, testingFolder)
         val client = DBClient("127.0.0.1", 12345).apply { connect() }
 
-
         runBlocking {
 
             client.createDB("Meow")

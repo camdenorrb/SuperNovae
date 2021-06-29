@@ -2,14 +2,14 @@ plugins {
     application
     idea
     `maven-publish`
-    id("com.github.johnrengelman.shadow") version "6.1.0"
-    id("com.github.ben-manes.versions") version "0.38.0"
-    kotlin("jvm") version "1.5.0-M1"
-    kotlin("plugin.serialization") version "1.5.0-M1"
+    id("com.github.johnrengelman.shadow") version "7.0.0"
+    id("com.github.ben-manes.versions") version "0.39.0"
+    kotlin("jvm") version "1.5.20"
+    kotlin("plugin.serialization") version "1.5.20"
 }
 
 group = "dev.twelveoclock"
-version = "1.0.58-Debug"
+version = "1.0.61-Debug"
 
 repositories {
 
@@ -34,15 +34,16 @@ repositories {
 
 dependencies {
 
-    implementation(kotlin("stdlib"))
     //implementation("org.capnproto:runtime:0.1.5")
-    implementation("me.camdenorrb:Netlius:1.0.14")
-    implementation("org.jetbrains.kotlinx:atomicfu:0.15.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.1.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.1.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3")
     //implementation("me.camdenorrb:KCommons:1.2.1")
-    implementation("commons-cli:commons-cli:1.4")
+
+    implementation(kotlin("stdlib"))
+    implementation("me.camdenorrb:Netlius:1.0.15")
+    implementation("org.jetbrains.kotlinx:atomicfu:0.16.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.2.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.0")
+    implementation("commons-cli:commons-cli:20040117.000000")
 
     testImplementation(kotlin("test-junit"))
 }
@@ -72,8 +73,8 @@ tasks {
         sourceCompatibility = JavaVersion.VERSION_16.toString()
         targetCompatibility = JavaVersion.VERSION_16.toString()
         kotlinOptions.jvmTarget = JavaVersion.VERSION_15.toString()
-        kotlinOptions.apiVersion = "1.4"
-        kotlinOptions.languageVersion = "1.4"
+        kotlinOptions.apiVersion = "1.5"
+        kotlinOptions.languageVersion = "1.5"
         kotlinOptions.freeCompilerArgs = listOf("-Xjvm-default=compatibility", "-Xmulti-platform", "-Xuse-experimental=kotlin.ExperimentalStdlibApi", "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes")
     }
     compileTestKotlin {
@@ -81,12 +82,12 @@ tasks {
         sourceCompatibility = JavaVersion.VERSION_16.toString()
         targetCompatibility = JavaVersion.VERSION_16.toString()
         kotlinOptions.jvmTarget = JavaVersion.VERSION_15.toString()
-        kotlinOptions.apiVersion = "1.4"
-        kotlinOptions.languageVersion = "1.4"
+        kotlinOptions.apiVersion = "1.5"
+        kotlinOptions.languageVersion = "1.5"
         kotlinOptions.freeCompilerArgs = listOf("-Xjvm-default=compatibility", "-Xmulti-platform", "-Xuse-experimental=kotlin.ExperimentalStdlibApi", "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes")
     }
     wrapper {
-        gradleVersion = "7.0-rc-1"
+        gradleVersion = "7.0"
     }
     artifacts {
         add("archives", sourcesJar)
