@@ -1,6 +1,6 @@
 package dev.twelveoclock.supernovae.ext
 
-import dev.twelveoclock.supernovae.api.Database
+import dev.twelveoclock.supernovae.api.FileDatabase
 import dev.twelveoclock.supernovae.protocol.ProtocolMessage
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -40,11 +40,11 @@ suspend fun Client.sendSelectAllRows(queryID: Int, tableName: String, onlyInCach
     suspendSendNovaeMessage(ProtocolMessage.Table.SelectAllRows(queryID, tableName, onlyInCache))
 }
 
-suspend fun Client.sendSelectRows(queryID: Int, tableName: String, filters: List<Database.Filter>, onlyCheckCache: Boolean = false, loadIntoCache: Boolean = false, amountOfRows: Int = -1) {
+suspend fun Client.sendSelectRows(queryID: Int, tableName: String, filters: List<FileDatabase.Filter>, onlyCheckCache: Boolean = false, loadIntoCache: Boolean = false, amountOfRows: Int = -1) {
     suspendSendNovaeMessage(ProtocolMessage.Table.SelectRows(queryID, tableName, filters, onlyCheckCache, loadIntoCache, amountOfRows))
 }
 
-suspend fun Client.sendDeleteRows(tableName: String, filters: List<Database.Filter>, amountOfRows: Int = -1) {
+suspend fun Client.sendDeleteRows(tableName: String, filters: List<FileDatabase.Filter>, amountOfRows: Int = -1) {
     suspendSendNovaeMessage(ProtocolMessage.Table.DeleteRows(tableName, filters, amountOfRows))
 }
 
@@ -52,11 +52,11 @@ suspend fun Client.sendInsertRow(tableName: String, row: JsonObject, shouldCache
     suspendSendNovaeMessage(ProtocolMessage.Table.InsertRow(tableName, row, shouldCache))
 }
 
-suspend fun Client.sendUpdateRows(tableName: String, filter: Database.Filter, columnName: String, row: JsonElement, amountOfRows: Int, onlyCheckCache: Boolean = false) {
+suspend fun Client.sendUpdateRows(tableName: String, filter: FileDatabase.Filter, columnName: String, row: JsonElement, amountOfRows: Int, onlyCheckCache: Boolean = false) {
     suspendSendNovaeMessage(ProtocolMessage.Table.UpdateRows(tableName, filter, columnName, row, amountOfRows, onlyCheckCache))
 }
 
-suspend fun Client.sendCacheRows(tableName: String, filter: Database.Filter) {
+suspend fun Client.sendCacheRows(tableName: String, filter: FileDatabase.Filter) {
     suspendSendNovaeMessage(ProtocolMessage.Table.CacheRows(tableName, filter))
 }
 

@@ -1,6 +1,6 @@
 package dev.twelveoclock.supernovae.net
 
-import dev.twelveoclock.supernovae.api.Database
+import dev.twelveoclock.supernovae.api.FileDatabase
 import dev.twelveoclock.supernovae.ext.filter
 import dev.twelveoclock.supernovae.ext.suspendReadNovaeMessage
 import dev.twelveoclock.supernovae.ext.suspendSendNovaeMessage
@@ -14,9 +14,7 @@ import java.io.EOFException
 import java.io.File
 import java.nio.channels.AsynchronousCloseException
 
-//import me.camdenorrb.netlius.net.Client as NetClient
-
-class DBServer(
+class Server(
     val host: String,
     val port: Int,
     val serverFolder: File
@@ -26,11 +24,11 @@ class DBServer(
 
     // Name lowercase -> Database
     // TODO: Load current ones
-    val databases = mutableMapOf<String, Database>()
+    val databases = mutableMapOf<String, FileDatabase>()
 
-    val selectedDatabase = mutableMapOf<Client, Database>()
+    val selectedDatabase = mutableMapOf<Client, FileDatabase>()
 
-    val changeListeners = mutableMapOf<Client, MutableMap<Database, MutableSet<Database.Table>>>()
+    val changeListeners = mutableMapOf<Client, MutableMap<FileDatabase, MutableSet<FileDatabase.Table>>>()
 
 
     var isRunning = false
@@ -46,7 +44,7 @@ class DBServer(
         }
 
         serverFolder.listFiles()?.filter { it.isDirectory }?.forEach {
-            databases[it.name] = Database(it)
+            databases[it.name] = FileDatabase(it)
         }
     }
 
@@ -142,7 +140,7 @@ class DBServer(
         }
 
         if (databaseName !in databases) {
-            val database = Database(File(serverFolder, databaseName))
+            val database = FileDatabase(File(serverFolder, databaseName))
             databases[databaseName] = database
         }
     }
@@ -481,7 +479,7 @@ class DBServer(
         changeListeners.remove(this)
     }
 
-    private suspend fun sendNotification(database: Database, table: Database.Table, rows: List<JsonObject>, type: ProtocolMessage.UpdateType) {
+    private suspend fun sendNotification(database: FileDatabase, table: FileDatabase.Table, rows: List<JsonObject>, type: ProtocolMessage.UpdateType) {
 
         val message = buildNotificationMessage(table.name, rows, type)
 

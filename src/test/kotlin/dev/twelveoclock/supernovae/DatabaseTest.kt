@@ -1,6 +1,6 @@
 package dev.twelveoclock.supernovae
 
-import dev.twelveoclock.supernovae.net.DBClient
+import dev.twelveoclock.supernovae.net.Client
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.builtins.serializer
@@ -18,13 +18,10 @@ class DatabaseTest {
 
         runBlocking {
 
-            val initClient = DBClient("127.0.0.1", 12345).apply { connect() }
+            val initClient = Client("127.0.0.1", 12345).apply { connect() }
 
-            initClient.createDB("MultiClientTest")
-            initClient.selectDB("MultiClientTest")
-
-            initClient.createTable("Count", Count::id.name)
-            val initTable  = initClient.selectTable("Count", Count::id)
+            val database = initClient.database("MultiClientTest")
+            val initTable = database.table("Count", Count::id)
 
             initTable.insertRow(Count(1, 0))
             println(initTable.selectRow(1))
@@ -33,9 +30,9 @@ class DatabaseTest {
 
             runBlocking {
                 repeat(1000000) {
-                    val client = DBClient("127.0.0.1", 12345).apply { connect() }
+                    val client = Client("127.0.0.1", 12345).apply { connect() }
                     client.selectDB("MultiClientTest")
-                    val table = client.selectTable("Count", Count::id)
+                    val table = client.table("Count", Count::id)
 
                     val count = table.selectRow(1)!!
                     table.updateRow(count.id, Count::count, count.count + 1)
@@ -54,7 +51,7 @@ class DatabaseTest {
     fun `disconnect pause test`() {
 
         val server = SuperNovae.server("127.0.0.1", 12345, testingFolder)
-        val client = DBClient("127.0.0.1", 12345).apply { connect() }
+        val client = Client("127.0.0.1", 12345).apply { connect() }
 
         runBlocking {
 
@@ -64,7 +61,7 @@ class DatabaseTest {
             client.createTable("Meow", "mew")
             client.createTable("MeowTable", Thing::name.name, true)
 
-            val table = client.selectTable("MeowTable", Thing::name, Thing.serializer(), String.serializer())
+            val table = client.table("MeowTable", Thing::name, Thing.serializer(), String.serializer())
 
             server.stop()
             println("Stopped")

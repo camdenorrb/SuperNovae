@@ -1,8 +1,8 @@
 package dev.twelveoclock.supernovae
 
-import dev.twelveoclock.supernovae.api.Database
+import dev.twelveoclock.supernovae.api.FileDatabase
 import dev.twelveoclock.supernovae.ext.*
-import dev.twelveoclock.supernovae.net.DBClient
+import dev.twelveoclock.supernovae.net.Client
 import dev.twelveoclock.supernovae.protocol.ProtocolMessage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -46,7 +46,7 @@ class ServerTest {
             client.sendSelectRows(
                 1,
                 "MeowTable",
-                listOf(Database.Filter("name", ProtocolMessage.Check.EQUAL, JsonPrimitive("Mr.Midnight")))
+                listOf(FileDatabase.Filter("name", ProtocolMessage.Check.EQUAL, JsonPrimitive("Mr.Midnight")))
             )
 
             (client.suspendReadNovaeMessage() as ProtocolMessage.Blob).messages.forEach {
@@ -70,21 +70,21 @@ class ServerTest {
 
         runBlocking {
 
-            val client = DBClient("127.0.0.1", 12345).apply { connect() } //Client("127.0.0.1", 12345)
+            val client = Client("127.0.0.1", 12345).apply { connect() } //Client("127.0.0.1", 12345)
             //val client = Netlius.client("127.0.0.1", 12345)
 
             //client.createDB("MeowDB")
-            client.selectDB("MeowDB")
+            client.database("MeowDB")
             //client.createTable("MeowTable", Thing::name.name, true)
 
-            val table = client.selectTable("MeowTable", Thing::name, Thing.serializer(), String.serializer())
+            val table = client.table("MeowTable", Thing::name, Thing.serializer(), String.serializer())
             //table.insertRow(Thing("Mr.Midnight", "Cat"))
 
             table.listenToUpdates { type, row ->
                 println("Updated: $row")
             }
 
-            val rows1 = table.selectRows(listOf(Database.Filter.eq(Thing::name, "Mr.Midnight")))
+            val rows1 = table.selectRows(FileDatabase.Filter.eq(Thing::name, "Mr.Midnight"))
 
             rows1.forEach {
                 println(it)
@@ -94,7 +94,7 @@ class ServerTest {
 
             table.updateRow("Mr.Midnight", Thing::personality, "Dog", String.serializer())
 
-            val rows2 = table.selectRows(listOf(Database.Filter.eq(Thing::name, "Mr.Midnight")))
+            val rows2 = table.selectRows(FileDatabase.Filter.eq(Thing::name, "Mr.Midnight"))
 
             rows2.forEach {
                 println(it)
@@ -107,6 +107,38 @@ class ServerTest {
 
         // Remove server folder after testing
         testingFolder.delete()
+    }
+
+    @Test
+    fun `new clean high level testing`() {
+
+        SuperNovae.server("127.0.0.1", 12345, testingFolder)
+
+        runBlocking {
+
+            // Should connect by default
+            val client = SuperNovae.client("127.0.0.1", 12345)
+
+            // Makes a database instance, this allows developers to work on multiple databases with one client concurrently
+            val database = client.database("MeowDB")
+            val table = database.selectTable("MeowTable", Thing::name)
+
+            table.listenToUpdates { type, row ->
+                println("Updated: $row")
+            }
+
+            table.selectRows(Filter.equals(Thing::name, "Mr.Midnight")).forEach {
+                println(it)
+            }
+
+            table.updateRow("Mr.Midnight", Thing::personality, "Dog")
+
+            table.selectRows(Filter.equals(Thing::name, "Mr.Midnight")).forEach {
+                println(it)
+            }
+
+            println("Done")
+        }
     }
 
     /*

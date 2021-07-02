@@ -1,6 +1,6 @@
 package dev.twelveoclock.supernovae.protocol
 
-import dev.twelveoclock.supernovae.api.Database
+import dev.twelveoclock.supernovae.api.FileDatabase
 import dev.twelveoclock.supernovae.serializer.JsonElementStringSerializer
 import dev.twelveoclock.supernovae.serializer.JsonObjectStringSerializer
 import kotlinx.serialization.Serializable
@@ -107,7 +107,7 @@ sealed class ProtocolMessage {
         @Serializable
         data class UpdateRows(
             val tableName: String,
-            val filter: Database.Filter,
+            val filter: FileDatabase.Filter,
             val columnName: String,
             @Serializable(JsonElementStringSerializer::class) val value: JsonElement,
             val amountOfRows: Int = -1,
@@ -118,14 +118,14 @@ sealed class ProtocolMessage {
         @Serializable
         data class CacheRows(
             val tableName: String,
-            val filter: Database.Filter
+            val filter: FileDatabase.Filter
         ) : Table()
 
         // This should only check cache
         @Serializable
         data class UncacheRows(
             val tableName: String,
-            val filter: Database.Filter
+            val filter: FileDatabase.Filter
         ) : Table()
 
         @Serializable
@@ -139,7 +139,7 @@ sealed class ProtocolMessage {
         data class SelectRows(
             override val queryID: Int,
             val tableName: String,
-            val filters: List<Database.Filter>,
+            val filters: List<FileDatabase.Filter>,
             val onlyCheckCache: Boolean = false,
             val loadIntoCache: Boolean = false,
             val amountOfRows: Int = -1
@@ -149,7 +149,7 @@ sealed class ProtocolMessage {
         @Serializable
         data class DeleteRows(
             val tableName: String,
-            val filters: List<Database.Filter>,
+            val filters: List<FileDatabase.Filter>,
             val amountOfRows: Int = -1,
             val onlyCheckCache: Boolean = false
         ) : Table()

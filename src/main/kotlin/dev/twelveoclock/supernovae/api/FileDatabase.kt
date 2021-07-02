@@ -13,7 +13,7 @@ import java.io.File
 import kotlin.reflect.KProperty1
 
 // This is gonna be local only, expand upon in Server
-data class Database(val folder: File) {
+data class FileDatabase(val folder: File) {
 
     // Name -> Table
     val tables = mutableMapOf<String, Table>()
