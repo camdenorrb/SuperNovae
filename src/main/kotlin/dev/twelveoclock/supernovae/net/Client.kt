@@ -125,6 +125,86 @@ class Client(val host: String, val port: Int) {
     }
 
 
+    suspend fun suspendSendNovaeMessage(message: ProtocolMessage) {
+        val byteArray = ProtoBuf.encodeToByteArray(ProtocolMessage.serializer(), message)
+        queueAndFlush(Packet().int(byteArray.size).bytes(byteArray))
+    }
+
+    suspend fun suspendReadNovaeMessage(): ProtocolMessage {
+        val bytes = suspendReadBytes(suspendReadInt())
+        return ProtoBuf.decodeFromByteArray(ProtocolMessage.serializer(), bytes)
+    }
+
+    suspend fun sendCreateDB(dbName: String) {
+        suspendSendNovaeMessage(ProtocolMessage.DB.Create(dbName))
+    }
+
+    suspend fun sendCreateTable(tableName: String, keyColumn: String, shouldCacheAll: Boolean = false) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.Create(tableName, keyColumn, shouldCacheAll))
+    }
+
+    suspend fun sendDeleteDB(dbName: String) {
+        suspendSendNovaeMessage(ProtocolMessage.DB.Delete(dbName))
+    }
+
+    suspend fun sendSelectDB(dbName: String): Int {
+        suspendSendNovaeMessage(ProtocolMessage.DB.Select(dbName))
+
+    }
+
+    suspend fun sendSelectAllRows(queryID: Int, tableName: String, onlyInCache: Boolean = false) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.SelectAllRows(queryID, tableName, onlyInCache))
+    }
+
+    suspend fun sendSelectRows(queryID: Int, tableName: String, filters: List<FileDatabase.Filter>, onlyCheckCache: Boolean = false, loadIntoCache: Boolean = false, amountOfRows: Int = -1) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.SelectRows(queryID, tableName, filters, onlyCheckCache, loadIntoCache, amountOfRows))
+    }
+
+    suspend fun sendDeleteRows(tableName: String, filters: List<FileDatabase.Filter>, amountOfRows: Int = -1) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.DeleteRows(tableName, filters, amountOfRows))
+    }
+
+    suspend fun sendInsertRow(tableName: String, row: JsonObject, shouldCache: Boolean = false) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.InsertRow(tableName, row, shouldCache))
+    }
+
+    suspend fun sendUpdateRows(tableName: String, filter: FileDatabase.Filter, columnName: String, row: JsonElement, amountOfRows: Int, onlyCheckCache: Boolean = false) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.UpdateRows(tableName, filter, columnName, row, amountOfRows, onlyCheckCache))
+    }
+
+    suspend fun sendCacheRows(tableName: String, filter: FileDatabase.Filter) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.CacheRows(tableName, filter))
+    }
+
+    suspend fun sendCacheTable(tableName: String) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.Cache(tableName))
+    }
+
+    suspend fun sendSelectTable(queryID: Int, tableName: String) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.Select(queryID, tableName))
+    }
+
+    suspend fun sendUncacheTable(tableName: String) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.UnCache(tableName))
+    }
+
+    suspend fun sendDeleteTable(tableName: String) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.Delete(tableName))
+    }
+
+    suspend fun sendClearTable(tableName: String) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.Clear(tableName))
+    }
+
+    suspend fun sendStopListeningToTable(tableName: String) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.StopListening(tableName))
+    }
+
+    suspend fun sendListenToTable(tableName: String) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.StartListening(tableName))
+    }
+
+
     suspend fun database(name: String): Database {
 
         if (IS_DEBUGGING) {
@@ -174,12 +254,14 @@ class Client(val host: String, val port: Int) {
 
     inner class Database {
 
+        // TODO: Store an int id to be sent as a varint to the server on each query
+
         suspend inline fun <reified R, reified MV, MK : KProperty1<R, MV>> table(
             name: String,
             mainKey: MK,
             rowSerializer: KSerializer<R> = serializer(),
             keySerializer: KSerializer<MV> = serializer()
-        ): Client.Table<R, MV, MK> {
+        ): Table<R, MV, MK> {
 
             waiterMutex.withLock {
 
@@ -188,7 +270,7 @@ class Client(val host: String, val port: Int) {
                 client.sendSelectTable(queryID, name)
                 val response = waitForReply<ProtocolMessage.Table.SelectTableResponse>(queryID)
 
-                return Client.Table(this, name, mainKey, response.shouldCacheAll, rowSerializer, keySerializer)
+                return Table(name, mainKey, response.shouldCacheAll, rowSerializer, keySerializer)
             }
 
         }
@@ -218,7 +300,8 @@ class Client(val host: String, val port: Int) {
 
 
         // Can't make this an inner class due to issue: https://youtrack.jetbrains.com/issue/KT-12126
-        inner class Table<R, MV, MK : KProperty1<R, MV>>(
+
+        inner class Table<R, MV, MK : KProperty1<R, MV>> @PublishedApi internal constructor(
             val name: String,
             val mainKeyProperty: MK,
             val shouldCacheAll: Boolean,
@@ -233,7 +316,7 @@ class Client(val host: String, val port: Int) {
                 }
 
                 waiterMutex.withLock {
-                    dbClient.client.sendCacheTable(name)
+                    client.sendCacheTable(name)
                 }
             }
 
@@ -243,8 +326,8 @@ class Client(val host: String, val port: Int) {
                     println("[C SuperNovae ($name)] load()")
                 }
 
-                dbClient.waiterMutex.withLock {
-                    dbClient.client.sendCacheTable(name)
+                waiterMutex.withLock {
+                    client.sendCacheTable(name)
                 }
             }
 
@@ -254,8 +337,8 @@ class Client(val host: String, val port: Int) {
                     println("[C SuperNovae ($name)] unload()")
                 }
 
-                dbClient.waiterMutex.withLock {
-                    dbClient.client.sendUncacheTable(name)
+                waiterMutex.withLock {
+                    client.sendUncacheTable(name)
                 }
             }
 
@@ -266,8 +349,8 @@ class Client(val host: String, val port: Int) {
                     println("[C SuperNovae ($name)] create()")
                 }
 
-                dbClient.waiterMutex.withLock {
-                    dbClient.client.sendCreateTable(mainKeyProperty.name, name, shouldCacheAll)
+                waiterMutex.withLock {
+                    client.sendCreateTable(mainKeyProperty.name, name, shouldCacheAll)
                 }
             }
 
@@ -277,8 +360,8 @@ class Client(val host: String, val port: Int) {
                     println("[C SuperNovae ($name)] delete()")
                 }
 
-                dbClient.waiterMutex.withLock {
-                    dbClient.client.sendDeleteTable(name)
+                waiterMutex.withLock {
+                    client.sendDeleteTable(name)
                 }
             }
 
@@ -288,8 +371,8 @@ class Client(val host: String, val port: Int) {
                     println("[C SuperNovae ($name)] clear()")
                 }
 
-                dbClient.waiterMutex.withLock {
-                    dbClient.client.sendClearTable(name)
+                waiterMutex.withLock {
+                    client.sendClearTable(name)
                 }
             }
 
@@ -307,12 +390,12 @@ class Client(val host: String, val port: Int) {
                     listener(it.type, newRowValue)
                 }
 
-                dbClient.waiterMutex.withLock {
+                waiterMutex.withLock {
 
-                    dbClient.notificationListeners.getOrPut(name, { mutableListOf() }).add(dbListener)
+                    notificationListeners.getOrPut(name, { mutableListOf() }).add(dbListener)
 
-                    if (dbClient.notificationListeners.getValue(name).size == 1) {
-                        dbClient.client.sendListenToTable(name)
+                    if (notificationListeners.getValue(name).size == 1) {
+                        client.sendListenToTable(name)
                     }
                 }
 
@@ -325,12 +408,12 @@ class Client(val host: String, val port: Int) {
                     println("[C SuperNovae ($name)] removeListenToUpdates($listener)")
                 }
 
-                dbClient.waiterMutex.withLock {
+                waiterMutex.withLock {
 
-                    dbClient.notificationListeners[name]?.remove(listener)
+                    notificationListeners[name]?.remove(listener)
 
-                    if (dbClient.notificationListeners[name]?.isEmpty() == true) {
-                        dbClient.client.sendStopListeningToTable(name)
+                    if (notificationListeners[name]?.isEmpty() == true) {
+                        client.sendStopListeningToTable(name)
                     }
                 }
             }
@@ -346,13 +429,13 @@ class Client(val host: String, val port: Int) {
                 )
 
 
-                dbClient.waiterMutex.withLock {
+                waiterMutex.withLock {
 
-                    val queryID = dbClient.nextQueryID.getAndIncrement()
+                    val queryID = nextQueryID.getAndIncrement()
 
-                    dbClient.client.sendSelectRows(queryID, name, filters, onlyCheckCache, loadIntoCache, 1)
+                    client.sendSelectRows(queryID, name, filters, onlyCheckCache, loadIntoCache, 1)
 
-                    val rowText = (dbClient.waitForReply<ProtocolMessage.Blob>(queryID).messages.firstOrNull() as? ProtocolMessage.Table.SelectRowResponse)?.row?.toString()
+                    val rowText = (waitForReply<ProtocolMessage.Blob>(queryID).messages.firstOrNull() as? ProtocolMessage.Table.SelectRowResponse)?.row?.toString()
                         ?: return null
 
                     return JSON.decodeFromString(rowSerializer, rowText)
@@ -365,13 +448,13 @@ class Client(val host: String, val port: Int) {
                     println("[C SuperNovae ($name)] selectAllRows($onlyInCache)")
                 }
 
-                dbClient.waiterMutex.withLock {
+                waiterMutex.withLock {
 
-                    val queryID = dbClient.nextQueryID.getAndIncrement()
+                    val queryID = nextQueryID.getAndIncrement()
 
-                    dbClient.client.sendSelectAllRows(queryID, name, onlyInCache)
+                    client.sendSelectAllRows(queryID, name, onlyInCache)
 
-                    return dbClient.waitForReply<ProtocolMessage.Blob>(queryID).messages.map {
+                    return waitForReply<ProtocolMessage.Blob>(queryID).messages.map {
                         it as ProtocolMessage.Table.SelectRowResponse
                         Json.decodeFromJsonElement(rowSerializer, it.row)
                     }
@@ -384,13 +467,13 @@ class Client(val host: String, val port: Int) {
                     println("[C SuperNovae ($name)] selectRows($filters)")
                 }
 
-                dbClient.waiterMutex.withLock {
+                waiterMutex.withLock {
 
-                    val queryID = dbClient.nextQueryID.getAndIncrement()
+                    val queryID = nextQueryID.getAndIncrement()
 
-                    dbClient.client.sendSelectRows(queryID, name, filters.toList(), onlyCheckCache, loadIntoCache, amountOfRows)
+                    client.sendSelectRows(queryID, name, filters.toList(), onlyCheckCache, loadIntoCache, amountOfRows)
 
-                    return dbClient.waitForReply<ProtocolMessage.Blob>(queryID).messages.map {
+                    return waitForReply<ProtocolMessage.Blob>(queryID).messages.map {
                         it as ProtocolMessage.Table.SelectRowResponse
                         Json.decodeFromJsonElement(rowSerializer, it.row)
                     }
@@ -406,8 +489,8 @@ class Client(val host: String, val port: Int) {
 
                 val rowAsJsonObject = JSON.encodeToJsonElement(rowSerializer, row) as JsonObject
 
-                dbClient.waiterMutex.withLock {
-                    dbClient.client.sendInsertRow(name, rowAsJsonObject, shouldCache)
+                waiterMutex.withLock {
+                    client.sendInsertRow(name, rowAsJsonObject, shouldCache)
                 }
             }
 
@@ -421,8 +504,8 @@ class Client(val host: String, val port: Int) {
                     FileDatabase.Filter(mainKeyProperty.name, ProtocolMessage.Check.EQUAL, JSON.encodeToJsonElement(keySerializer, keyValue))
                 )
 
-                dbClient.waiterMutex.withLock {
-                    dbClient.client.sendDeleteRows(name, filters, 1)
+                waiterMutex.withLock {
+                    client.sendDeleteRows(name, filters, 1)
                 }
             }
 
@@ -432,8 +515,8 @@ class Client(val host: String, val port: Int) {
                     println("[C SuperNovae ($name)] deleteRows($filters, $amountOfRows)")
                 }
 
-                dbClient.waiterMutex.withLock {
-                    dbClient.client.sendDeleteRows(name, filters, amountOfRows)
+                waiterMutex.withLock {
+                    client.sendDeleteRows(name, filters, amountOfRows)
                 }
             }
 
@@ -469,8 +552,8 @@ class Client(val host: String, val port: Int) {
                     println("[C SuperNovae ($name)] updateRows($filter, ${property.name}, $newValue, $serializer)")
                 }
 
-                dbClient.waiterMutex.withLock {
-                    dbClient.client.sendUpdateRows(
+                waiterMutex.withLock {
+                    client.sendUpdateRows(
                         name,
                         filter,
                         property.name,

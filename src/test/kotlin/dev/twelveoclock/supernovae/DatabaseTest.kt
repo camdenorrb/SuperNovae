@@ -31,8 +31,8 @@ class DatabaseTest {
             runBlocking {
                 repeat(1000000) {
                     val client = Client("127.0.0.1", 12345).apply { connect() }
-                    client.selectDB("MultiClientTest")
-                    val table = client.table("Count", Count::id)
+                    val database = client.database("MultiClientTest")
+                    val table = database.table("Count", Count::id)
 
                     val count = table.selectRow(1)!!
                     table.updateRow(count.id, Count::count, count.count + 1)
@@ -55,13 +55,12 @@ class DatabaseTest {
 
         runBlocking {
 
-            client.createDB("Meow")
-            client.selectDB("Meow")
+            val database = client.database("Meow")
 
-            client.createTable("Meow", "mew")
-            client.createTable("MeowTable", Thing::name.name, true)
+            database.table("mew", Thing::name/*"mew"*/)
+            //client.createTable("MeowTable", Thing::name.name, true)
 
-            val table = client.table("MeowTable", Thing::name, Thing.serializer(), String.serializer())
+            val table = database.table("MeowTable", Thing::name, Thing.serializer(), String.serializer())
 
             server.stop()
             println("Stopped")

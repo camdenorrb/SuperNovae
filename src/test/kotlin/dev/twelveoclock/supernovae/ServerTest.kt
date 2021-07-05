@@ -74,9 +74,9 @@ class ServerTest {
             //val client = Netlius.client("127.0.0.1", 12345)
 
             //client.createDB("MeowDB")
-            client.database("MeowDB")
+            val database = client.database("MeowDB")
             //client.createTable("MeowTable", Thing::name.name, true)
-
+            database.createTable()
             val table = client.table("MeowTable", Thing::name, Thing.serializer(), String.serializer())
             //table.insertRow(Thing("Mr.Midnight", "Cat"))
 

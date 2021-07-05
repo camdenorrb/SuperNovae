@@ -43,7 +43,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.2.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.0")
-    implementation("commons-cli:commons-cli:20040117.000000")
+    implementation("commons-cli:commons-cli:1.4")
 
     testImplementation(kotlin("test-junit"))
 }

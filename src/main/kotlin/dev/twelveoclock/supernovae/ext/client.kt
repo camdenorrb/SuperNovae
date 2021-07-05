@@ -10,6 +10,7 @@ import me.camdenorrb.netlius.net.Packet
 
 // TODO: Get rid of all this
 
+/*
 suspend fun Client.suspendSendNovaeMessage(message: ProtocolMessage) {
     val byteArray = ProtoBuf.encodeToByteArray(ProtocolMessage.serializer(), message)
     queueAndFlush(Packet().int(byteArray.size).bytes(byteArray))
@@ -32,8 +33,9 @@ suspend fun Client.sendDeleteDB(dbName: String) {
     suspendSendNovaeMessage(ProtocolMessage.DB.Delete(dbName))
 }
 
-suspend fun Client.sendSelectDB(dbName: String) {
+suspend fun Client.sendSelectDB(dbName: String): Int {
     suspendSendNovaeMessage(ProtocolMessage.DB.Select(dbName))
+
 }
 
 suspend fun Client.sendSelectAllRows(queryID: Int, tableName: String, onlyInCache: Boolean = false) {
@@ -87,3 +89,4 @@ suspend fun Client.sendStopListeningToTable(tableName: String) {
 suspend fun Client.sendListenToTable(tableName: String) {
     suspendSendNovaeMessage(ProtocolMessage.Table.StartListening(tableName))
 }
+*/
