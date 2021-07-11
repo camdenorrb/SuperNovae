@@ -2,8 +2,6 @@ package dev.twelveoclock.supernovae.net
 
 import dev.twelveoclock.supernovae.api.FileDatabase
 import dev.twelveoclock.supernovae.ext.filter
-import dev.twelveoclock.supernovae.ext.suspendReadNovaeMessage
-import dev.twelveoclock.supernovae.ext.suspendSendNovaeMessage
 import dev.twelveoclock.supernovae.protocol.ProtocolMessage
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -189,7 +187,7 @@ class Server(
             "The selected table ${message.tableName} does not exist."
         }
 
-        suspendSendNovaeMessage(ProtocolMessage.QueryResponse(message.queryID, ProtocolMessage.Table.SelectTableResponse(table.name, table.keyColumn, table.shouldCacheAll)))
+        suspendSendNovaeMessage(ProtocolMessage.QueryResponse(message.messageID, ProtocolMessage.Table.SelectTableResponse(table.name, table.keyColumn, table.shouldCacheAll)))
     }
 
     private suspend fun Client.deleteRows(message: ProtocolMessage.Table.DeleteRows) {
@@ -238,10 +236,10 @@ class Server(
         val selectedRows = selectedTable.getAllRows(message.onlyCheckCache)
 
         val rowResponses = selectedRows.map {
-            ProtocolMessage.Table.SelectRowResponse(message.queryID, it)
+            ProtocolMessage.Table.SelectRowResponse(message.messageID, it)
         }
 
-        suspendSendNovaeMessage(ProtocolMessage.QueryResponse(message.queryID, ProtocolMessage.Blob(rowResponses)))
+        suspendSendNovaeMessage(ProtocolMessage.QueryResponse(message.messageID, ProtocolMessage.Blob(rowResponses)))
     }
 
     private suspend fun Client.selectRows(message: ProtocolMessage.Table.SelectRows) {
@@ -265,10 +263,10 @@ class Server(
         }
 
         val rowResponses = selectedRows?.map {
-            ProtocolMessage.Table.SelectRowResponse(message.queryID, it)
+            ProtocolMessage.Table.SelectRowResponse(message.messageID, it)
         } ?: emptyList()
 
-        suspendSendNovaeMessage(ProtocolMessage.QueryResponse(message.queryID, ProtocolMessage.Blob(rowResponses)))
+        suspendSendNovaeMessage(ProtocolMessage.QueryResponse(message.messageID, ProtocolMessage.Blob(rowResponses)))
     }
 
     private suspend fun Client.insertRow(message: ProtocolMessage.Table.InsertRow) {
@@ -450,7 +448,7 @@ class Server(
             "Unable to find table '${message.tableName}'."
         }
 
-        changeListeners.getOrPut(this, { mutableMapOf() }).getOrPut(selectedDatabase, { mutableSetOf() }).add(selectedTable)
+        changeListeners.getOrPut(this) { mutableMapOf() }.getOrPut(selectedDatabase) { mutableSetOf() }.add(selectedTable)
     }
 
     private fun Client.removeListenToTable(message: ProtocolMessage.Table.StopListening) {

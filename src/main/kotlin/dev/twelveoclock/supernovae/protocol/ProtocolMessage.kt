@@ -10,14 +10,13 @@ import kotlinx.serialization.json.JsonObject
 @Serializable
 sealed class ProtocolMessage {
 
-    // TODO: Change this when queries get more complex
-    interface Query {
-        val queryID: Int
-    }
+    abstract val messageID: Int
 
+
+    // Response message ID will be the same and the query ID
     @Serializable
-    class QueryResponse(
-        val queryID: Int,
+    data class QueryResponse(
+        override val messageID: Int,
         val innerMessage: ProtocolMessage
     ) : ProtocolMessage()
 
@@ -31,31 +30,36 @@ sealed class ProtocolMessage {
     @Serializable
     object StopListeningToAllTables : ProtocolMessage()
 
+
     @Serializable
-    sealed class DB : ProtocolMessage() {
+    sealed class DB : ProtocolMessage(), Query {
 
         @Serializable
         data class Create(
+            override val messageID: Int,
             val databaseName: String
         ) : DB()
 
         @Serializable
         data class Delete(
+            override val messageID: Int,
             val databaseName: String
         ) : DB()
 
         @Serializable
         data class Select(
+            override val messageID: Int,
             val databaseName: String
         ) : DB()
 
     }
 
     @Serializable
-    sealed class Table : ProtocolMessage() {
+    sealed class Table : ProtocolMessage(), Query {
 
         @Serializable
         data class Create(
+            override val messageID: Int,
             val tableName: String,
             val keyColumn: String,
             val shouldCacheAll: Boolean = false
@@ -63,42 +67,49 @@ sealed class ProtocolMessage {
 
         @Serializable
         data class Delete(
+            override val messageID: Int,
             val tableName: String
         ) : Table()
 
         @Serializable
         data class Select(
-            override val queryID: Int,
+            override val messageID: Int,
             val tableName: String
-        ) : Table(), Query
+        ) : Table()
 
         @Serializable
         data class Clear(
+            override val messageID: Int,
             val tableName: String
         ) : Table()
 
         @Serializable
         data class Cache(
+            override val messageID: Int,
             val tableName: String
         ) : Table()
 
         @Serializable
         data class UnCache(
+            override val messageID: Int,
             val tableName: String
         ) : Table()
 
         @Serializable
         data class StartListening(
+            override val messageID: Int,
             val tableName: String
         ) : Table()
 
         @Serializable
         data class StopListening(
+            override val messageID: Int,
             val tableName: String
         ) : Table()
 
         @Serializable
         data class InsertRow(
+            override val messageID: Int,
             val tableName: String,
             @Serializable(JsonObjectStringSerializer::class) val row: JsonObject,
             val shouldCache: Boolean = false
@@ -106,6 +117,7 @@ sealed class ProtocolMessage {
 
         @Serializable
         data class UpdateRows(
+            override val messageID: Int,
             val tableName: String,
             val filter: FileDatabase.Filter,
             val columnName: String,
@@ -117,6 +129,7 @@ sealed class ProtocolMessage {
         // This should only check flat files
         @Serializable
         data class CacheRows(
+            override val messageID: Int,
             val tableName: String,
             val filter: FileDatabase.Filter
         ) : Table()
@@ -124,30 +137,32 @@ sealed class ProtocolMessage {
         // This should only check cache
         @Serializable
         data class UncacheRows(
+            override val messageID: Int,
             val tableName: String,
             val filter: FileDatabase.Filter
         ) : Table()
 
         @Serializable
         data class SelectAllRows(
-            override val queryID: Int,
+            override val messageID: Int,
             val tableName: String,
             val onlyCheckCache: Boolean = false,
-        ) : Table(), Query
+        ) : Table()
 
         @Serializable
         data class SelectRows(
-            override val queryID: Int,
+            override val messageID: Int,
             val tableName: String,
             val filters: List<FileDatabase.Filter>,
             val onlyCheckCache: Boolean = false,
             val loadIntoCache: Boolean = false,
             val amountOfRows: Int = -1
-        ) : Table(), Query
+        ) : Table()
 
         // This should only check cache
         @Serializable
         data class DeleteRows(
+            override val messageID: Int,
             val tableName: String,
             val filters: List<FileDatabase.Filter>,
             val amountOfRows: Int = -1,
@@ -156,12 +171,13 @@ sealed class ProtocolMessage {
 
         @Serializable
         data class SelectRowResponse(
-            val queryID: Int,
+            override val messageID: Int,
             @Serializable(JsonObjectStringSerializer::class) val row: JsonObject
         ) : Table()
 
         @Serializable
         data class SelectTableResponse(
+            override val messageID: Int,
             val tableName: String,
             val keyColumn: String,
             val shouldCacheAll: Boolean
@@ -169,6 +185,7 @@ sealed class ProtocolMessage {
 
         @Serializable
         data class UpdateNotification(
+            override val messageID: Int,
             val tableName: String,
             val type: UpdateType,
             @Serializable(JsonObjectStringSerializer::class) val row: JsonObject

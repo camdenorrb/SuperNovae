@@ -1,24 +1,23 @@
 package dev.twelveoclock.supernovae.net
 
 import dev.twelveoclock.supernovae.api.FileDatabase
-import dev.twelveoclock.supernovae.ext.*
 import dev.twelveoclock.supernovae.protocol.ProtocolMessage
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.serializer
+import kotlinx.serialization.protobuf.ProtoBuf
 import me.camdenorrb.netlius.Netlius
 import me.camdenorrb.netlius.net.Client
+import me.camdenorrb.netlius.net.Packet
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
-import kotlin.reflect.KProperty1
 
 // This will be the high level remote implementation
 // TODO: Make a high level for local as-well
@@ -26,8 +25,7 @@ class Client(val host: String, val port: Int) {
 
     val waiterMutex = Mutex()
 
-    @PublishedApi
-    internal val nextQueryID = atomic(0)
+    val messageQueue = mutableListOf<ProtocolMessage>()
 
     var messageWaiters = ConcurrentHashMap<Int, Continuation<ProtocolMessage>>()
 
@@ -35,7 +33,8 @@ class Client(val host: String, val port: Int) {
     val notificationListeners = mutableMapOf<String, MutableList<(ProtocolMessage.Table.UpdateNotification) -> Unit>>()
 
 
-    private lateinit var readTask: Job
+    @PublishedApi
+    internal val nextQueryID = atomic(0)
 
 
     var isConnected = false
@@ -43,6 +42,15 @@ class Client(val host: String, val port: Int) {
 
     lateinit var client: Client
         private set
+
+
+    private val packetHandleTask = runBlocking {
+        launch(Dispatchers.IO, CoroutineStart.UNDISPATCHED) {
+            while (client.channel.isOpen) {
+                handleNextMessage()
+            }
+        }
+    }
 
 
     // TODO: Add a suspending version
@@ -53,46 +61,7 @@ class Client(val host: String, val port: Int) {
         }
 
         client = Netlius.client(host, port, Long.MAX_VALUE)
-
-        runBlocking {
-            readTask = launch(Dispatchers.IO) {
-                while (client.channel.isOpen) {
-
-                    val message = client.suspendReadNovaeMessage()
-
-                    if (message is ProtocolMessage.Blob && message.messages.firstOrNull() is ProtocolMessage.Table.UpdateNotification) {
-
-                        //@Suppress("UNCHECKED_CAST")
-                        //message as ProtocolMessage.Blob<ProtocolMessage.Table.UpdateNotification>
-
-                        message.messages.forEach { notification ->
-
-                            notification as ProtocolMessage.Table.UpdateNotification
-
-                            if (IS_DEBUGGING) {
-                                println("[C SuperNovae] Received update: ${notification.tableName} ${notification.row} ${notification.type}")
-                            }
-                            notificationListeners[notification.tableName]?.forEach {
-                                it(notification)
-                            }
-                        }
-
-                    } else if (message is ProtocolMessage.QueryResponse) {
-
-                        val waiter = checkNotNull(messageWaiters.remove(message.queryID)) {
-                            "Could not get a waiter for query id ${message.queryID}"
-                        }
-
-                        try {
-                            waiter.resume(message.innerMessage)
-                        } catch (ex: IllegalStateException) {
-                            println(message)
-                            ex.printStackTrace()
-                        }
-                    }
-                }
-            }
-        }
+        packetHandleTask.start()
 
         isConnected = true
     }
@@ -107,7 +76,7 @@ class Client(val host: String, val port: Int) {
             it.value.resumeWithException(IllegalStateException("Client has been disconnected"))
         }
 
-        readTask.cancel()
+        packetHandleTask.cancel()
         client.close()
         messageWaiters.clear()
 
@@ -127,81 +96,80 @@ class Client(val host: String, val port: Int) {
 
     suspend fun suspendSendNovaeMessage(message: ProtocolMessage) {
         val byteArray = ProtoBuf.encodeToByteArray(ProtocolMessage.serializer(), message)
-        queueAndFlush(Packet().int(byteArray.size).bytes(byteArray))
+        client.queueAndFlush(Packet().int(byteArray.size).bytes(byteArray))
     }
 
     suspend fun suspendReadNovaeMessage(): ProtocolMessage {
-        val bytes = suspendReadBytes(suspendReadInt())
+        val bytes = client.suspendReadBytes(client.suspendReadInt())
         return ProtoBuf.decodeFromByteArray(ProtocolMessage.serializer(), bytes)
     }
 
-    suspend fun sendCreateDB(dbName: String) {
-        suspendSendNovaeMessage(ProtocolMessage.DB.Create(dbName))
+    suspend fun createDB(dbName: String) {
+        suspendSendNovaeMessage(ProtocolMessage.DB.Create(nextQueryID.getAndIncrement(), dbName))
     }
 
-    suspend fun sendCreateTable(tableName: String, keyColumn: String, shouldCacheAll: Boolean = false) {
-        suspendSendNovaeMessage(ProtocolMessage.Table.Create(tableName, keyColumn, shouldCacheAll))
+    suspend fun createTable(tableName: String, keyColumn: String, shouldCacheAll: Boolean = false) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.Create(nextQueryID.getAndIncrement(), tableName, keyColumn, shouldCacheAll))
     }
 
-    suspend fun sendDeleteDB(dbName: String) {
-        suspendSendNovaeMessage(ProtocolMessage.DB.Delete(dbName))
+    suspend fun deleteDB(dbName: String) {
+        suspendSendNovaeMessage(ProtocolMessage.DB.Delete(nextQueryID.getAndIncrement(), dbName))
     }
 
-    suspend fun sendSelectDB(dbName: String): Int {
-        suspendSendNovaeMessage(ProtocolMessage.DB.Select(dbName))
-
+    suspend fun selectDB(dbName: String): Int {
+        suspendSendNovaeMessage(ProtocolMessage.DB.Select(nextQueryID.getAndIncrement(), dbName))
     }
 
-    suspend fun sendSelectAllRows(queryID: Int, tableName: String, onlyInCache: Boolean = false) {
-        suspendSendNovaeMessage(ProtocolMessage.Table.SelectAllRows(queryID, tableName, onlyInCache))
+    suspend fun selectAllRows(tableName: String, onlyInCache: Boolean = false) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.SelectAllRows(nextQueryID.getAndIncrement(), tableName, onlyInCache))
     }
 
-    suspend fun sendSelectRows(queryID: Int, tableName: String, filters: List<FileDatabase.Filter>, onlyCheckCache: Boolean = false, loadIntoCache: Boolean = false, amountOfRows: Int = -1) {
-        suspendSendNovaeMessage(ProtocolMessage.Table.SelectRows(queryID, tableName, filters, onlyCheckCache, loadIntoCache, amountOfRows))
+    suspend fun selectRows(tableName: String, filters: List<FileDatabase.Filter>, onlyCheckCache: Boolean = false, loadIntoCache: Boolean = false, amountOfRows: Int = -1) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.SelectRows(nextQueryID.getAndIncrement(), tableName, filters, onlyCheckCache, loadIntoCache, amountOfRows))
     }
 
-    suspend fun sendDeleteRows(tableName: String, filters: List<FileDatabase.Filter>, amountOfRows: Int = -1) {
-        suspendSendNovaeMessage(ProtocolMessage.Table.DeleteRows(tableName, filters, amountOfRows))
+    suspend fun deleteRows(tableName: String, filters: List<FileDatabase.Filter>, amountOfRows: Int = -1) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.DeleteRows(nextQueryID.getAndIncrement(), tableName, filters, amountOfRows))
     }
 
-    suspend fun sendInsertRow(tableName: String, row: JsonObject, shouldCache: Boolean = false) {
-        suspendSendNovaeMessage(ProtocolMessage.Table.InsertRow(tableName, row, shouldCache))
+    suspend fun insertRow(tableName: String, row: JsonObject, shouldCache: Boolean = false) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.InsertRow(nextQueryID.getAndIncrement(), tableName, row, shouldCache))
     }
 
-    suspend fun sendUpdateRows(tableName: String, filter: FileDatabase.Filter, columnName: String, row: JsonElement, amountOfRows: Int, onlyCheckCache: Boolean = false) {
-        suspendSendNovaeMessage(ProtocolMessage.Table.UpdateRows(tableName, filter, columnName, row, amountOfRows, onlyCheckCache))
+    suspend fun updateRows(tableName: String, filter: FileDatabase.Filter, columnName: String, row: JsonElement, amountOfRows: Int, onlyCheckCache: Boolean = false) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.UpdateRows(nextQueryID.getAndIncrement(), tableName, filter, columnName, row, amountOfRows, onlyCheckCache))
     }
 
-    suspend fun sendCacheRows(tableName: String, filter: FileDatabase.Filter) {
-        suspendSendNovaeMessage(ProtocolMessage.Table.CacheRows(tableName, filter))
+    suspend fun cacheRows(tableName: String, filter: FileDatabase.Filter) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.CacheRows(nextQueryID.getAndIncrement(), tableName, filter))
     }
 
-    suspend fun sendCacheTable(tableName: String) {
-        suspendSendNovaeMessage(ProtocolMessage.Table.Cache(tableName))
+    suspend fun cacheTable(tableName: String) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.Cache(nextQueryID.getAndIncrement(), tableName))
     }
 
-    suspend fun sendSelectTable(queryID: Int, tableName: String) {
-        suspendSendNovaeMessage(ProtocolMessage.Table.Select(queryID, tableName))
+    suspend fun selectTable(tableName: String) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.Select(nextQueryID.getAndIncrement(), tableName))
     }
 
-    suspend fun sendUncacheTable(tableName: String) {
-        suspendSendNovaeMessage(ProtocolMessage.Table.UnCache(tableName))
+    suspend fun uncacheTable(tableName: String) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.UnCache(nextQueryID.getAndIncrement(), tableName))
     }
 
-    suspend fun sendDeleteTable(tableName: String) {
-        suspendSendNovaeMessage(ProtocolMessage.Table.Delete(tableName))
+    suspend fun deleteTable(tableName: String) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.Delete(nextQueryID.getAndIncrement(), tableName))
     }
 
-    suspend fun sendClearTable(tableName: String) {
-        suspendSendNovaeMessage(ProtocolMessage.Table.Clear(tableName))
+    suspend fun clearTable(tableName: String) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.Clear(nextQueryID.getAndIncrement(), tableName))
     }
 
-    suspend fun sendStopListeningToTable(tableName: String) {
-        suspendSendNovaeMessage(ProtocolMessage.Table.StopListening(tableName))
+    suspend fun stopListeningToTable(tableName: String) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.StopListening(nextQueryID.getAndIncrement(), tableName))
     }
 
-    suspend fun sendListenToTable(tableName: String) {
-        suspendSendNovaeMessage(ProtocolMessage.Table.StartListening(tableName))
+    suspend fun listenToTable(tableName: String) {
+        suspendSendNovaeMessage(ProtocolMessage.Table.StartListening(nextQueryID.getAndIncrement(), tableName))
     }
 
 
@@ -211,9 +179,11 @@ class Client(val host: String, val port: Int) {
             println("[C SuperNovae] database($name)")
         }
 
-        waiterMutex.withLock {
-            client.sendSelectDB(name)
+        val databaseID = waiterMutex.withLock {
+            selectDB(name)
         }
+
+        return Database(databaseID, this)
     }
 
     /*
@@ -236,7 +206,42 @@ class Client(val host: String, val port: Int) {
         }
 
         waiterMutex.withLock {
-            client.sendDeleteDB(name)
+            deleteDB(name)
+        }
+    }
+
+
+    private suspend fun handleNextMessage() {
+
+        val message = suspendReadNovaeMessage()
+
+        if (message is ProtocolMessage.QueryResponse) {
+
+            val waiter = checkNotNull(messageWaiters.remove(message.messageID)) {
+                "Could not get a waiter for query id ${message.messageID}"
+            }
+
+            try {
+                waiter.resume(message.innerMessage)
+            }
+            catch (ex: IllegalStateException) {
+                println(message)
+                ex.printStackTrace()
+            }
+        }
+        else if (message is ProtocolMessage.Blob && message.messages.firstOrNull() is ProtocolMessage.Table.UpdateNotification) {
+            message.messages.forEach { notification ->
+
+                notification as ProtocolMessage.Table.UpdateNotification
+
+                if (IS_DEBUGGING) {
+                    println("[C SuperNovae] Received update: ${notification.tableName} ${notification.row} ${notification.type}")
+                }
+
+                notificationListeners[notification.tableName]?.forEach {
+                    it(notification)
+                }
+            }
         }
     }
 
@@ -246,324 +251,6 @@ class Client(val host: String, val port: Int) {
 
         val JSON = Json {
             encodeDefaults = true
-        }
-
-    }
-
-
-
-    inner class Database {
-
-        // TODO: Store an int id to be sent as a varint to the server on each query
-
-        suspend inline fun <reified R, reified MV, MK : KProperty1<R, MV>> table(
-            name: String,
-            mainKey: MK,
-            rowSerializer: KSerializer<R> = serializer(),
-            keySerializer: KSerializer<MV> = serializer()
-        ): Table<R, MV, MK> {
-
-            waiterMutex.withLock {
-
-                val queryID = nextQueryID.getAndIncrement()
-
-                client.sendSelectTable(queryID, name)
-                val response = waitForReply<ProtocolMessage.Table.SelectTableResponse>(queryID)
-
-                return Table(name, mainKey, response.shouldCacheAll, rowSerializer, keySerializer)
-            }
-
-        }
-
-        suspend fun createTable(name: String, keyColumnName: String, shouldCacheAll: Boolean = false) {
-
-            if (IS_DEBUGGING) {
-                println("[C SuperNovae] createTable($name, $keyColumnName, $shouldCacheAll)")
-            }
-
-            waiterMutex.withLock {
-                client.sendCreateTable(name, keyColumnName, shouldCacheAll)
-            }
-        }
-
-        suspend fun deleteTable(name: String) {
-
-            if (IS_DEBUGGING) {
-                println("[C SuperNovae] deleteTable($name)")
-            }
-
-            waiterMutex.withLock {
-                client.sendDeleteTable(name)
-            }
-        }
-
-
-
-        // Can't make this an inner class due to issue: https://youtrack.jetbrains.com/issue/KT-12126
-
-        inner class Table<R, MV, MK : KProperty1<R, MV>> @PublishedApi internal constructor(
-            val name: String,
-            val mainKeyProperty: MK,
-            val shouldCacheAll: Boolean,
-            val rowSerializer: KSerializer<R>,
-            val keySerializer: KSerializer<MV>,
-        ) {
-
-            suspend fun load() {
-
-                if (IS_DEBUGGING) {
-                    println("[C SuperNovae ($name)] load()")
-                }
-
-                waiterMutex.withLock {
-                    client.sendCacheTable(name)
-                }
-            }
-
-            suspend fun load(filter: FileDatabase.Filter) {
-
-                if (IS_DEBUGGING) {
-                    println("[C SuperNovae ($name)] load()")
-                }
-
-                waiterMutex.withLock {
-                    client.sendCacheTable(name)
-                }
-            }
-
-            suspend fun unload() {
-
-                if (IS_DEBUGGING) {
-                    println("[C SuperNovae ($name)] unload()")
-                }
-
-                waiterMutex.withLock {
-                    client.sendUncacheTable(name)
-                }
-            }
-
-
-            suspend fun create() {
-
-                if (IS_DEBUGGING) {
-                    println("[C SuperNovae ($name)] create()")
-                }
-
-                waiterMutex.withLock {
-                    client.sendCreateTable(mainKeyProperty.name, name, shouldCacheAll)
-                }
-            }
-
-            suspend fun delete() {
-
-                if (IS_DEBUGGING) {
-                    println("[C SuperNovae ($name)] delete()")
-                }
-
-                waiterMutex.withLock {
-                    client.sendDeleteTable(name)
-                }
-            }
-
-            suspend fun clear() {
-
-                if (IS_DEBUGGING) {
-                    println("[C SuperNovae ($name)] clear()")
-                }
-
-                waiterMutex.withLock {
-                    client.sendClearTable(name)
-                }
-            }
-
-            suspend fun listenToUpdates(listener: (type: ProtocolMessage.UpdateType, row: R) -> Unit): (ProtocolMessage.Table.UpdateNotification) -> Unit {
-
-                if (IS_DEBUGGING) {
-                    println("[C SuperNovae ($name)] listenToUpdates($listener)")
-                }
-
-                val dbListener: (ProtocolMessage.Table.UpdateNotification) -> Unit = {
-
-                    //val oldRowValue = JSON.decodeFromString(rowSerializer, it.oldRow.toString())
-                    val newRowValue = JSON.decodeFromString(rowSerializer, it.row.toString())
-
-                    listener(it.type, newRowValue)
-                }
-
-                waiterMutex.withLock {
-
-                    notificationListeners.getOrPut(name, { mutableListOf() }).add(dbListener)
-
-                    if (notificationListeners.getValue(name).size == 1) {
-                        client.sendListenToTable(name)
-                    }
-                }
-
-                return dbListener
-            }
-
-            suspend fun removeListenToUpdates(listener: (ProtocolMessage.Table.UpdateNotification) -> Unit) {
-
-                if (IS_DEBUGGING) {
-                    println("[C SuperNovae ($name)] removeListenToUpdates($listener)")
-                }
-
-                waiterMutex.withLock {
-
-                    notificationListeners[name]?.remove(listener)
-
-                    if (notificationListeners[name]?.isEmpty() == true) {
-                        client.sendStopListeningToTable(name)
-                    }
-                }
-            }
-
-            suspend fun selectRow(key: MV, onlyCheckCache: Boolean = shouldCacheAll, loadIntoCache: Boolean = false): R? {
-
-                if (IS_DEBUGGING) {
-                    println("[C SuperNovae ($name)] selectRow($key, $onlyCheckCache, $loadIntoCache)")
-                }
-
-                val filters = listOf(
-                    FileDatabase.Filter(mainKeyProperty.name, ProtocolMessage.Check.EQUAL, JSON.encodeToJsonElement(keySerializer, key))
-                )
-
-
-                waiterMutex.withLock {
-
-                    val queryID = nextQueryID.getAndIncrement()
-
-                    client.sendSelectRows(queryID, name, filters, onlyCheckCache, loadIntoCache, 1)
-
-                    val rowText = (waitForReply<ProtocolMessage.Blob>(queryID).messages.firstOrNull() as? ProtocolMessage.Table.SelectRowResponse)?.row?.toString()
-                        ?: return null
-
-                    return JSON.decodeFromString(rowSerializer, rowText)
-                }
-            }
-
-            suspend fun selectAllRows(onlyInCache: Boolean = false): List<R> {
-
-                if (IS_DEBUGGING) {
-                    println("[C SuperNovae ($name)] selectAllRows($onlyInCache)")
-                }
-
-                waiterMutex.withLock {
-
-                    val queryID = nextQueryID.getAndIncrement()
-
-                    client.sendSelectAllRows(queryID, name, onlyInCache)
-
-                    return waitForReply<ProtocolMessage.Blob>(queryID).messages.map {
-                        it as ProtocolMessage.Table.SelectRowResponse
-                        Json.decodeFromJsonElement(rowSerializer, it.row)
-                    }
-                }
-            }
-
-            suspend fun selectRows(vararg filters: FileDatabase.Filter, amountOfRows: Int = 0, onlyCheckCache: Boolean = shouldCacheAll, loadIntoCache: Boolean = false): List<R> {
-
-                if (IS_DEBUGGING) {
-                    println("[C SuperNovae ($name)] selectRows($filters)")
-                }
-
-                waiterMutex.withLock {
-
-                    val queryID = nextQueryID.getAndIncrement()
-
-                    client.sendSelectRows(queryID, name, filters.toList(), onlyCheckCache, loadIntoCache, amountOfRows)
-
-                    return waitForReply<ProtocolMessage.Blob>(queryID).messages.map {
-                        it as ProtocolMessage.Table.SelectRowResponse
-                        Json.decodeFromJsonElement(rowSerializer, it.row)
-                    }
-                }
-            }
-
-
-            suspend fun insertRow(row: R, shouldCache: Boolean = shouldCacheAll) {
-
-                if (IS_DEBUGGING) {
-                    println("[C SuperNovae ($name)] insertRow($row)")
-                }
-
-                val rowAsJsonObject = JSON.encodeToJsonElement(rowSerializer, row) as JsonObject
-
-                waiterMutex.withLock {
-                    client.sendInsertRow(name, rowAsJsonObject, shouldCache)
-                }
-            }
-
-            suspend fun deleteRow(keyValue: MV) {
-
-                if (IS_DEBUGGING) {
-                    println("[C SuperNovae ($name)] deleteRow($keyValue)")
-                }
-
-                val filters = listOf(
-                    FileDatabase.Filter(mainKeyProperty.name, ProtocolMessage.Check.EQUAL, JSON.encodeToJsonElement(keySerializer, keyValue))
-                )
-
-                waiterMutex.withLock {
-                    client.sendDeleteRows(name, filters, 1)
-                }
-            }
-
-            suspend fun deleteRows(filters: List<FileDatabase.Filter>, amountOfRows: Int = 0) {
-
-                if (IS_DEBUGGING) {
-                    println("[C SuperNovae ($name)] deleteRows($filters, $amountOfRows)")
-                }
-
-                waiterMutex.withLock {
-                    client.sendDeleteRows(name, filters, amountOfRows)
-                }
-            }
-
-
-            // TODO: Take a list of updates
-            suspend inline fun <reified T> updateRow(row: R, newValueProperty: KProperty1<R, T>, serializer: KSerializer<T> = serializer(), onlyCheckCache: Boolean = shouldCacheAll) {
-
-                if (IS_DEBUGGING) {
-                    println("[C SuperNovae ($name)] updateRow[0]($row, $newValueProperty, ${newValueProperty.name}, $serializer, $onlyCheckCache)")
-                }
-
-                val filter = FileDatabase.Filter(mainKeyProperty.name, ProtocolMessage.Check.EQUAL, JSON.encodeToJsonElement(keySerializer, mainKeyProperty.get(row)))
-
-                // Don't use mutex here
-                updateRows(filter, newValueProperty, newValueProperty.get(row), serializer, 1, onlyCheckCache)
-            }
-
-            suspend inline fun <reified T> updateRow(keyValue: MV, newValueProperty: KProperty1<R, T>, newValue: T, serializer: KSerializer<T> = serializer(), onlyCheckCache: Boolean = shouldCacheAll) {
-
-                if (IS_DEBUGGING) {
-                    println("[C SuperNovae ($name)] updateRow[1]($keyValue, $newValueProperty, ${newValueProperty.name}, $newValue, $serializer)")
-                }
-
-                val filter = FileDatabase.Filter(mainKeyProperty.name, ProtocolMessage.Check.EQUAL, JSON.encodeToJsonElement(keySerializer, keyValue))
-
-                // Don't use mutex here
-                updateRows(filter, newValueProperty, newValue, serializer, 1, onlyCheckCache)
-            }
-
-            suspend inline fun <reified T> updateRows(filter: FileDatabase.Filter, property: KProperty1<R, T>, newValue: T, serializer: KSerializer<T> = serializer(), amountOfRows: Int = 0, onlyCheckCache: Boolean = shouldCacheAll) {
-
-                if (IS_DEBUGGING) {
-                    println("[C SuperNovae ($name)] updateRows($filter, ${property.name}, $newValue, $serializer)")
-                }
-
-                waiterMutex.withLock {
-                    client.sendUpdateRows(
-                        name,
-                        filter,
-                        property.name,
-                        JSON.encodeToJsonElement(serializer, newValue),
-                        amountOfRows,
-                        onlyCheckCache
-                    )
-                }
-            }
-
         }
 
     }
