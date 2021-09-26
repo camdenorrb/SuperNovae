@@ -14,12 +14,13 @@ sealed class ProtocolMessage {
 
 
     // Response message ID will be the same and the query ID
+    /*
     @Serializable
     data class QueryResponse(
         override val messageID: Int,
         val innerMessage: ProtocolMessage
     ) : ProtocolMessage()
-
+    */
 
     // Make this use generics when KotlinX supports it - NVM, it shouldn't be generic, ex advanced queries
     @Serializable
@@ -32,7 +33,7 @@ sealed class ProtocolMessage {
 
 
     @Serializable
-    sealed class DB : ProtocolMessage(), Query {
+    sealed class DB : ProtocolMessage() {
 
         @Serializable
         data class Create(
@@ -55,7 +56,7 @@ sealed class ProtocolMessage {
     }
 
     @Serializable
-    sealed class Table : ProtocolMessage(), Query {
+    sealed class Table : ProtocolMessage() {
 
         @Serializable
         data class Create(

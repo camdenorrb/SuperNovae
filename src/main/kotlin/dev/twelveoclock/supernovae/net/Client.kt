@@ -118,6 +118,7 @@ class Client(val host: String, val port: Int) {
 
     suspend fun selectDB(dbName: String): Int {
         suspendSendNovaeMessage(ProtocolMessage.DB.Select(nextQueryID.getAndIncrement(), dbName))
+        suspendReadNovaeMessage() as
     }
 
     suspend fun selectAllRows(tableName: String, onlyInCache: Boolean = false) {

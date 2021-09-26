@@ -4,8 +4,8 @@ plugins {
     `maven-publish`
     id("com.github.johnrengelman.shadow") version "7.0.0"
     id("com.github.ben-manes.versions") version "0.39.0"
-    kotlin("jvm") version "1.5.20"
-    kotlin("plugin.serialization") version "1.5.20"
+    kotlin("jvm") version "1.5.21"
+    kotlin("plugin.serialization") version "1.5.21"
 }
 
 group = "dev.twelveoclock"
@@ -39,10 +39,10 @@ dependencies {
 
     implementation(kotlin("stdlib"))
     implementation("me.camdenorrb:Netlius:1.0.15")
-    implementation("org.jetbrains.kotlinx:atomicfu:0.16.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.2.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.0")
+    implementation("org.jetbrains.kotlinx:atomicfu:0.16.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.2.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1")
     implementation("commons-cli:commons-cli:1.4")
 
     testImplementation(kotlin("test-junit"))
