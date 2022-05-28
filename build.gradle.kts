@@ -5,31 +5,16 @@ plugins {
     id("com.github.johnrengelman.shadow") version "7.1.2"
     id("com.github.ben-manes.versions") version "0.39.0"
     kotlin("jvm") version "1.6.21"
-    kotlin("plugin.serialization") version "1.5.21"
+    kotlin("plugin.serialization") version "1.6.21"
 }
 
 group = "dev.twelveoclock"
 version = "1.0.61-Debug"
 
 repositories {
-
     jcenter()
     mavenLocal()
     mavenCentral()
-
-    maven("https://maven.pkg.jetbrains.space/camdenorrb/p/twelveoclock-dev/maven") {
-
-        name = "TwelveOClockDev"
-
-        credentials {
-            project.properties["twelveoclockMavenUsername"]?.let { twelveoclockMavenUsername ->
-                username = twelveoclockMavenUsername.toString()
-            }
-            project.properties["twelveoclockMavenPassword"]?.let { twelveoclockMavenPassword ->
-                password = twelveoclockMavenPassword.toString()
-            }
-        }
-    }
 }
 
 dependencies {
@@ -38,11 +23,11 @@ dependencies {
     //implementation("me.camdenorrb:KCommons:1.2.1")
 
     implementation(kotlin("stdlib"))
-    implementation("me.camdenorrb:Netlius:1.0.15")
-    implementation("org.jetbrains.kotlinx:atomicfu:0.16.2")
+    implementation("me.camdenorrb:Netlius:1.1.0")
+    implementation("org.jetbrains.kotlinx:atomicfu:0.17.2")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.3")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.3.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
     implementation("commons-cli:commons-cli:1.5.0")
 
     testImplementation(kotlin("test-junit"))
@@ -69,7 +54,6 @@ tasks {
     }
 
     compileKotlin {
-        kotlinOptions.useIR = true
         sourceCompatibility = JavaVersion.VERSION_16.toString()
         targetCompatibility = JavaVersion.VERSION_16.toString()
         kotlinOptions.jvmTarget = JavaVersion.VERSION_15.toString()
@@ -78,16 +62,12 @@ tasks {
         kotlinOptions.freeCompilerArgs = listOf("-Xjvm-default=compatibility", "-Xmulti-platform", "-Xuse-experimental=kotlin.ExperimentalStdlibApi", "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes")
     }
     compileTestKotlin {
-        kotlinOptions.useIR = true
         sourceCompatibility = JavaVersion.VERSION_16.toString()
         targetCompatibility = JavaVersion.VERSION_16.toString()
         kotlinOptions.jvmTarget = JavaVersion.VERSION_15.toString()
         kotlinOptions.apiVersion = "1.5"
         kotlinOptions.languageVersion = "1.5"
         kotlinOptions.freeCompilerArgs = listOf("-Xjvm-default=compatibility", "-Xmulti-platform", "-Xuse-experimental=kotlin.ExperimentalStdlibApi", "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes")
-    }
-    wrapper {
-        gradleVersion = "7.0"
     }
     artifacts {
         add("archives", sourcesJar)
@@ -97,33 +77,4 @@ tasks {
 
 application {
     mainClassName = "dev.twelveoclock.supernovae.MainKt"
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            from(components["java"])
-            artifact(tasks["sourcesJar"])
-            artifact(tasks["javadocJar"])
-        }
-    }
-    repositories {
-        maven {
-
-            url = uri("https://maven.pkg.jetbrains.space/camdenorrb/p/twelveoclock-dev/maven")
-
-            credentials {
-                project.properties["twelveoclockMavenUsername"]?.let { twelveoclockMavenUsername ->
-                    username = twelveoclockMavenUsername.toString()
-                }
-                project.properties["twelveoclockMavenPassword"]?.let { twelveoclockMavenPassword ->
-                    password = twelveoclockMavenPassword.toString()
-                }
-            }
-        }
-    }
-}
-
-repositories {
-
 }
