@@ -26,7 +26,7 @@ dependencies {
     implementation("me.camdenorrb:Netlius:1.1.0")
     implementation("org.jetbrains.kotlinx:atomicfu:0.18.3")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.3.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.4.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
     implementation("commons-cli:commons-cli:1.5.0")
 
